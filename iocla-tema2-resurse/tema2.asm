@@ -27,8 +27,7 @@ section .bss
     img_height: resd 1
     img_backup: resd 1
     img_dim:    resd 1
-    i_cont:     resd 1
-    j_cont:     resd 1
+    blur_sum:   resd 1
 
 section .text
 global main
@@ -132,45 +131,30 @@ blur:
     imul eax,ebx
     mov [img_dim],eax
     
+    ; compute length of image
     mov ecx,[img_dim]
     imul ecx,4
     PRINT_UDEC 4,ecx
     NEWLINE
-    
+    ; allocated memory dynamically for backup
     push ecx,
     call malloc
     add esp,4
     mov [img_backup],eax
-    
-    ; adresele img si img_backup trebuie dublu-deref
-  
-    ;push eax
-    ;push ebx
-    ;push ecx
-    ;push edx
-    ;mov ecx,[img_dim]   
-    ;mov ebx,[img_backup]
-    ;mov eax,[img]
-    ;push ecx
-    ;push ebx
-    ;push eax
+    ; copied image to backup  
     push dword[img_dim]
     push dword[img_backup]
     push dword[img]
     call backup_img
     add esp,12
-    ;pop edx
-    ;pop ecx
-    ;pop ebx
-    ;pop eax
     
-    ;mov eax,[img_backup]
-    ;PRINT_UDEC 4,[eax+4]
-    ;NEWLINE
-    
-    push dword[img_dim]
+    ;push dword[img_dim]
+    ;push dword[img_backup]
+    ;call show_image
+    ;add esp,8
     push dword[img_backup]
-    call show_image
+    push dword[img]
+    call blur_values
     add esp,8
     
     leave 
@@ -204,9 +188,9 @@ backup_img:
     mov ebx,[ebp+12]
     ; dimensiunea vectorul
     mov ecx,[ebp+16]
-    mov edx,[eax+4*ecx-4]
-    PRINT_UDEC 4,edx
-     NEWLINE
+    ;mov edx,[eax+4*ecx-4]
+    ;PRINT_UDEC 4,edx
+    ;NEWLINE
        
 back_proc:
     mov edx,[eax+4*ecx-4]
@@ -250,3 +234,305 @@ display:
 
 ; ================================================
  
+blur_values:
+    push ebp
+    mov ebp,esp
+    push eax
+    push ebx
+    push ecx
+    mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[img_height]
+    mov edx,[img_width]
+    
+    sub ecx,1  
+iter_height:
+    sub ecx,1
+    cmp ecx,0
+    jz blur_end
+    mov edx,[img_width]
+    sub edx,2
+iter_width:
+    ;PRINT_STRING "("
+    ;PRINT_UDEC 4,ecx
+    ;PRINT_STRING ","
+    ;PRINT_UDEC 4,edx
+    ;PRINT_STRING ")"
+    ;NEWLINE
+    mov dword[blur_sum],0
+    
+    ; =======================================
+    push edx
+    push ecx
+    push ebx
+    push eax
+    
+    call get_current
+    add [blur_sum],eax
+  
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    ; =======================================
+    push edx
+    push ecx
+    push ebx
+    push eax
+    
+    call get_left
+    add [blur_sum],eax
+    
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    ; =======================================
+    push edx
+    push ecx
+    push ebx
+    push eax
+    
+    call get_right
+    add [blur_sum],eax
+    
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    ; ========================================
+    push edx
+    push ecx
+    push ebx
+    push eax
+    
+    call get_top
+    add [blur_sum],eax
+    
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    ; ========================================
+    push edx
+    push ecx
+    push ebx
+    push eax
+    
+    call get_bottom
+    add [blur_sum],eax
+    
+    ;PRINT_UDEC 4,[blur_sum]
+    ;NEWLINE
+    
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    ; ========================================   
+    push eax
+    push edx
+    push ecx
+    mov eax,[blur_sum]
+    mov ecx,5
+    xor edx,edx
+    div ecx
+    mov [blur_sum],eax
+      
+    pop ecx
+    pop edx
+    pop eax
+    ; ========================================
+    push edx
+    push ecx
+    push ebx
+    push eax
+    
+    call blur_current_value
+    
+    pop eax
+    pop ebx
+    pop ecx
+    pop edx
+    
+    sub edx,1  
+    cmp edx,0
+    jz iter_height
+    jmp iter_width
+
+blur_end:
+    pop ecx
+    pop ebx
+    pop eax
+    leave
+    ret
+
+; ===================================================
+get_current:
+    push ebp
+    mov ebp,esp
+    
+    ;mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[ebp+16]
+    mov edx,[ebp+20]
+    
+    push ebx
+    
+    mov eax,[img_height]
+    imul eax,4
+    imul eax,ecx 
+    mov ebx,edx
+    imul ebx,4
+    add eax,ebx
+    mov ecx,eax
+    
+    pop ebx
+    mov eax,[ebx+ecx]
+    ;PRINT_UDEC 4,eax
+    ;PRINT_STRING "|"
+     
+    leave
+    ret
+; ====================================================
+get_left:
+    push ebp
+    mov ebp,esp
+    
+    ;mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[ebp+16]
+    mov edx,[ebp+20]
+    
+    push ebx
+    
+    mov eax,[img_height]
+    imul eax,4
+    imul eax,ecx 
+    mov ebx,edx
+    imul ebx,4
+    add eax,ebx
+    mov ecx,eax
+    sub ecx,4
+    
+    pop ebx
+    mov eax,[ebx+ecx]
+     
+    leave
+    ret
+; ====================================================
+get_right:
+    push ebp
+    mov ebp,esp
+    
+    ;mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[ebp+16]
+    mov edx,[ebp+20]
+    
+    push ebx
+    
+    mov eax,[img_height]
+    imul eax,4
+    imul eax,ecx 
+    mov ebx,edx
+    imul ebx,4
+    add eax,ebx
+    mov ecx,eax
+    add ecx,4
+    
+    pop ebx
+    mov eax,[ebx+ecx]
+   ; PRINT_UDEC 4,eax
+   ; NEWLINE
+     
+    leave
+    ret
+; ===================================================
+get_top:
+    push ebp
+    mov ebp,esp
+    
+    ;mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[ebp+16]
+    mov edx,[ebp+20]
+    
+    push ebx
+    
+    mov eax,[img_height]
+    sub ecx,1
+    imul eax,4
+    imul eax,ecx 
+    mov ebx,edx
+    imul ebx,4
+    add eax,ebx
+    mov ecx,eax
+    
+    pop ebx
+    mov eax,[ebx+ecx]
+    ;PRINT_UDEC 4,eax
+    ;NEWLINE
+     
+    leave
+    ret
+; ====================================================
+get_bottom:
+    push ebp
+    mov ebp,esp
+    
+    ;mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[ebp+16]
+    mov edx,[ebp+20]
+    
+    push ebx
+    
+    mov eax,[img_height]
+    add ecx,1
+    imul eax,4
+    imul eax,ecx 
+    mov ebx,edx
+    imul ebx,4
+    add eax,ebx
+    mov ecx,eax
+    
+    pop ebx
+    mov eax,[ebx+ecx]
+    ;PRINT_UDEC 4,eax
+    ;NEWLINE
+     
+    leave
+    ret
+; ====================================================
+blur_current_value:
+    push ebp
+    mov ebp,esp
+    
+    mov eax,[ebp+8]
+    mov ebx,[ebp+12]
+    mov ecx,[ebp+16]
+    mov edx,[ebp+20]
+    
+    push eax
+    push ebx
+    
+    mov eax,[img_height]
+    imul eax,4
+    imul eax,ecx 
+    mov ebx,edx
+    imul ebx,4
+    add eax,ebx
+    mov ecx,eax
+    
+    pop ebx
+    pop eax
+    mov edx,[blur_sum]
+    mov [eax+ecx],edx
+    PRINT_UDEC 4,[eax+ecx]
+    NEWLINE
+     
+    leave
+    ret
+
+    
