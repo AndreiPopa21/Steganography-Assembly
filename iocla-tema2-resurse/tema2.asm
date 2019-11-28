@@ -1,4 +1,4 @@
-%include "include/io.inc"
+%include "/home/student/Desktop/Prov/Tema2/iocla-tema2-resurse/include/io.inc"
 
 extern atoi
 extern printf
@@ -99,7 +99,7 @@ solve_task5:
     ; TODO Task5
     jmp done
 solve_task6:
-    ; TODO Task6
+    call blur
     jmp done
 
     ; Free the memory allocated for the image.
@@ -111,6 +111,32 @@ done:
     ; Epilogue
     ; Do not modify!
     xor eax, eax
+    leave
+    ret
+
+blur:
+    push ebp
+    mov ebp,esp
+    mov eax,img_width
+    mov ebx,img_height
+    
+    push dword[eax]
+    call log_udec
+    add esp,4
+    
+    push dword[ebx]
+    call log_udec
+    add esp,4
+    
+    leave 
+    ret
+    
+log_udec:
+    push ebp
+    mov ebp,esp
+    mov eax,[esp+8]
+    PRINT_UDEC 4,eax
+    NEWLINE
     leave
     ret
     
