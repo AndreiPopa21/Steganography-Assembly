@@ -3,6 +3,7 @@
 extern atoi
 extern printf
 extern exit
+extern malloc
 
 ; Functions to read/free/print the image.
 ; The image is passed in argv[1].
@@ -24,10 +25,15 @@ section .bss
     img:        resd 1
     img_width:  resd 1
     img_height: resd 1
+    img_backup: resd 1
+    img_dim:    resd 1
+    i_cont:     resd 1
+    j_cont:     resd 1
 
 section .text
 global main
 main:
+    mov ebp, esp; for correct debugging
     ; Prologue
     ; Do not modify!
     push ebp
@@ -114,23 +120,64 @@ done:
     leave
     ret
 
+; =================================================
+
 blur:
     push ebp
     mov ebp,esp
-    mov eax,img_width
-    mov ebx,img_height
+   
     
-    push dword[eax]
-    call log_udec
-    add esp,4
+    mov eax,[img_width]
+    mov ebx,[img_height]
+    imul eax,ebx
+    mov [img_dim],eax
     
-    push dword[ebx]
-    call log_udec
+    mov ecx,[img_dim]
+    imul ecx,4
+    PRINT_UDEC 4,ecx
+    NEWLINE
+    
+    push ecx,
+    call malloc
     add esp,4
+    mov [img_backup],eax
+    
+    ; adresele img si img_backup trebuie dublu-deref
+  
+    ;push eax
+    ;push ebx
+    ;push ecx
+    ;push edx
+    ;mov ecx,[img_dim]   
+    ;mov ebx,[img_backup]
+    ;mov eax,[img]
+    ;push ecx
+    ;push ebx
+    ;push eax
+    push dword[img_dim]
+    push dword[img_backup]
+    push dword[img]
+    call backup_img
+    add esp,12
+    ;pop edx
+    ;pop ecx
+    ;pop ebx
+    ;pop eax
+    
+    ;mov eax,[img_backup]
+    ;PRINT_UDEC 4,[eax+4]
+    ;NEWLINE
+    
+    push dword[img_dim]
+    push dword[img_backup]
+    call show_image
+    add esp,8
     
     leave 
     ret
-    
+ 
+; ===============================================
+       
 log_udec:
     push ebp
     mov ebp,esp
@@ -139,4 +186,67 @@ log_udec:
     NEWLINE
     leave
     ret
+
+; ================================================
+
+backup_img:
+    push ebp
+    mov ebp,esp
     
+    push eax
+    push ebx
+    push ecx
+    push edx
+   
+    ; adresa catre vectorul original
+    mov eax,[ebp+8]
+    ; adresa catre vectorul backup
+    mov ebx,[ebp+12]
+    ; dimensiunea vectorul
+    mov ecx,[ebp+16]
+    mov edx,[eax+4*ecx-4]
+    PRINT_UDEC 4,edx
+     NEWLINE
+       
+back_proc:
+    mov edx,[eax+4*ecx-4]
+    mov [ebx+4*ecx-4],edx    
+    sub ecx,1   
+    cmp ecx,0
+    jnz back_proc
+    
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    
+    leave
+    ret
+; ================================================   
+
+show_image:
+    push ebp
+    mov ebp,esp
+    push eax
+    push ecx
+    push edx
+    mov eax,[ebp+8]
+    mov ecx,[ebp+12]
+
+display:
+    mov edx, [eax+ecx*4-4]
+    PRINT_UDEC 4,edx
+    NEWLINE
+    sub ecx,1
+    cmp ecx,0
+    jnz display
+    
+    pop edx
+    pop ecx
+    pop eax
+    
+    leave
+    ret
+
+; ================================================
+ 
