@@ -4,6 +4,7 @@ extern atoi
 extern printf
 extern exit
 extern malloc
+extern free
 
 ; Functions to read/free/print the image.
 ; The image is passed in argv[1].
@@ -134,8 +135,8 @@ blur:
     ; compute length of image
     mov ecx,[img_dim]
     imul ecx,4
-    PRINT_UDEC 4,ecx
-    NEWLINE
+    ;PRINT_UDEC 4,ecx
+    ;NEWLINE
     ; allocated memory dynamically for backup
     push ecx,
     call malloc
@@ -208,29 +209,29 @@ back_proc:
     ret
 ; ================================================   
 
-show_image:
-    push ebp
-    mov ebp,esp
-    push eax
-    push ecx
-    push edx
-    mov eax,[ebp+8]
-    mov ecx,[ebp+12]
+;show_image:
+;    push ebp
+;    mov ebp,esp
+;    push eax
+;    push ecx
+;    push edx
+;    mov eax,[ebp+8]
+;    mov ecx,[ebp+12]
 
-display:
-    mov edx, [eax+ecx*4-4]
-    PRINT_UDEC 4,edx
-    NEWLINE
-    sub ecx,1
-    cmp ecx,0
-    jnz display
+;display:
+;    mov edx, [eax+ecx*4-4]
+;    PRINT_UDEC 4,edx
+;    NEWLINE
+;    sub ecx,1
+;    cmp ecx,0
+;    jnz display
     
-    pop edx
-    pop ecx
-    pop eax
+;    pop edx
+;    pop ecx
+;    pop eax
     
-    leave
-    ret
+;    leave
+;    ret
 
 ; ================================================
  
@@ -245,20 +246,16 @@ blur_values:
     mov ecx,[img_height]
     mov edx,[img_width]
     
+    
     sub ecx,1  
 iter_height:
     sub ecx,1
     cmp ecx,0
-    jz blur_end
+    jz blur_values_end
     mov edx,[img_width]
     sub edx,2
 iter_width:
-    ;PRINT_STRING "("
-    ;PRINT_UDEC 4,ecx
-    ;PRINT_STRING ","
-    ;PRINT_UDEC 4,edx
-    ;PRINT_STRING ")"
-    ;NEWLINE
+    
     mov dword[blur_sum],0
     
     ; =======================================
@@ -267,8 +264,15 @@ iter_width:
     push ebx
     push eax
     
+    ;PRINT_UDEC 4,ecx
+    ;PRINT_STRING ","
+    ;PRINT_UDEC 4,edx
+    ;PRINT_STRING " ==  "
+    
     call get_current
     add [blur_sum],eax
+    ;PRINT_UDEC 4,eax
+    ;PRINT_STRING " - "
   
     pop eax
     pop ebx
@@ -282,6 +286,8 @@ iter_width:
     
     call get_left
     add [blur_sum],eax
+    ;PRINT_UDEC 4,eax
+    ;PRINT_STRING " - "
     
     pop eax
     pop ebx
@@ -295,6 +301,8 @@ iter_width:
     
     call get_right
     add [blur_sum],eax
+    ;PRINT_UDEC 4,eax
+    ;PRINT_STRING " - "
     
     pop eax
     pop ebx
@@ -308,6 +316,8 @@ iter_width:
     
     call get_top
     add [blur_sum],eax
+    ;PRINT_UDEC 4,eax
+    ;PRINT_STRING " - "
     
     pop eax
     pop ebx
@@ -321,6 +331,8 @@ iter_width:
     
     call get_bottom
     add [blur_sum],eax
+    ;PRINT_UDEC 4,eax
+    ;NEWLINE
     
     ;PRINT_UDEC 4,[blur_sum]
     ;NEWLINE
@@ -348,19 +360,71 @@ iter_width:
     push ebx
     push eax
     
+    push edx
+    push ecx
+   
     call blur_current_value
+    add esp,8
     
     pop eax
     pop ebx
     pop ecx
     pop edx
     
+    ;PRINT_UDEC 4,ecx
+    ;PRINT_STRING ","
+    ;PRINT_UDEC 4,edx
+    ;NEWLINE
+    
     sub edx,1  
     cmp edx,0
     jz iter_height
     jmp iter_width
 
+
+blur_values_end:  
+    
+    xor ecx,ecx
+    sub ecx,1
+  
+    jmp blur_end
+    
+show_img_x:
+    add ecx,1
+    cmp ecx,[img_height]
+    jz blur_end
+    xor edx,edx
+show_img_y:    
+    mov eax,ecx
+    mov esi,[img_width]
+    imul eax,esi
+    add eax,edx
+    mov ebx,[img]
+    PRINT_UDEC 4,[ebx+4*eax]
+    PRINT_STRING " "
+    
+    add edx,1
+    cmp edx,[img_width]
+    jnz show_img_y
+    NEWLINE
+    jmp show_img_x
+
+    
 blur_end:
+    mov eax,[img]
+    mov ebx,[img_width]
+    mov ecx,[img_height]
+    push ecx
+    push ebx
+    push eax
+    call print_image
+    add esp,12
+    
+    ;mov eax,[img_backup]
+    ;push eax
+    ;call free
+    ;add esp,4
+
     pop ecx
     pop ebx
     pop eax
@@ -379,7 +443,7 @@ get_current:
     
     push ebx
     
-    mov eax,[img_height]
+    mov eax,[img_width]
     imul eax,4
     imul eax,ecx 
     mov ebx,edx
@@ -406,7 +470,7 @@ get_left:
     
     push ebx
     
-    mov eax,[img_height]
+    mov eax,[img_width]
     imul eax,4
     imul eax,ecx 
     mov ebx,edx
@@ -432,7 +496,7 @@ get_right:
     
     push ebx
     
-    mov eax,[img_height]
+    mov eax,[img_width]
     imul eax,4
     imul eax,ecx 
     mov ebx,edx
@@ -460,7 +524,7 @@ get_top:
     
     push ebx
     
-    mov eax,[img_height]
+    mov eax,[img_width]
     sub ecx,1
     imul eax,4
     imul eax,ecx 
@@ -488,7 +552,7 @@ get_bottom:
     
     push ebx
     
-    mov eax,[img_height]
+    mov eax,[img_width]
     add ecx,1
     imul eax,4
     imul eax,ecx 
@@ -509,15 +573,15 @@ blur_current_value:
     push ebp
     mov ebp,esp
     
-    mov eax,[ebp+8]
-    mov ebx,[ebp+12]
-    mov ecx,[ebp+16]
-    mov edx,[ebp+20]
+    ;mov eax,[ebp+8]
+    ;mov ebx,[ebp+12]
+    mov ecx,[ebp+8]
+    mov edx,[ebp+12]
     
-    push eax
-    push ebx
+    ;push eax
+    ;push ebx
     
-    mov eax,[img_height]
+    mov eax,[img_width]
     imul eax,4
     imul eax,ecx 
     mov ebx,edx
@@ -525,13 +589,16 @@ blur_current_value:
     add eax,ebx
     mov ecx,eax
     
-    pop ebx
-    pop eax
+  
+    ;pop ebx
+    ;pop eax
+    mov eax,[img]
     mov edx,[blur_sum]
     mov [eax+ecx],edx
-    PRINT_UDEC 4,[eax+ecx]
-    NEWLINE
-     
+    ;PRINT_UDEC 4,[eax+ecx]
+    ;NEWLINE
+    ;PRINT_STRING "=="
+    
     leave
     ret
 
