@@ -29,6 +29,8 @@ section .bss
     img_backup: resd 1
     img_dim:    resd 1
     blur_sum:   resd 1
+    morse_off:  resd 1
+    morse_msg:  resd 1
 
 section .text
 global main
@@ -40,6 +42,8 @@ main:
     mov ebp, esp
 
     mov eax, [ebp + 8]
+    PRINT_UDEC 4,eax
+    NEWLINE
     cmp eax, 1
     jne not_zero_param
 
@@ -69,10 +73,18 @@ not_zero_param:
     ; Let's get the task number. It will be stored at task variable's address.
     mov eax, [ebp + 12]
     push DWORD[eax + 8]
+    ;mov ecx,[eax+8]
+    ;xor edx,edx
+    ;mov dl,byte[ecx]
+    ;PRINT_UDEC 4,edx
+    ;NEWLINE
     call atoi
     add esp, 4
+   ; PRINT_UDEC 4,eax
+   ; NEWLINE
     mov [task], eax
-
+    
+    
     ; There you go! Have fun! :D
     mov eax, [task]
     cmp eax, 1
@@ -97,6 +109,26 @@ solve_task2:
     jmp done
 solve_task3:
     ; TODO Task3
+    mov eax,[ebp+12]
+    mov ecx,[eax+12]
+    mov [morse_msg],ecx
+    xor edx,edx
+    mov ebx,[morse_msg]
+    mov dl,byte[ebx+1]
+    PRINT_UDEC 4,edx
+    
+    mov eax,[ebp+12]
+    push dword[eax+16]
+    call atoi
+    mov [morse_off],eax
+ 
+   ; mov eax,[ebp+12]
+   ; mov ebx,[eax+16]
+    
+    ;PRINT_UDEC 4, ebx
+    ;PRINT_UDEC 4,[ecx]
+    NEWLINE
+    
     jmp done
 solve_task4:
     ; TODO Task4
