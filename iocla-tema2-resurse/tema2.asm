@@ -31,6 +31,7 @@ section .bss
     blur_sum:   resd 1
     morse_off:  resd 1
     morse_msg:  resd 1
+    rand_msg:   resd 1
 
 section .text
 global main
@@ -177,11 +178,9 @@ bruteforce_singlebyte_xor:
     ; restore original img
     pop eax
     ; restore the img dimension
-    pop ecx
-    
+    pop ecx   
     ; set the key start from 0
-    xor esi,esi
-    
+    xor esi,esi   
 brute:
     
     ; with every key, we make a new copy  
@@ -197,16 +196,31 @@ brute:
     push dword[img_backup]
     call xor_img_with_key
     add esp,12
-    
-    
+   
+  
     ; increment key and check its size
     add esi,1
     cmp esi,256
     jl brute
-   
-     
+    
+    ; how to print the string
+    ;mov eax,4
+    ;push eax
+    ;call malloc
+    ;mov [rand_msg],eax
+    ;add esp,4
+    ;mov eax,[rand_msg]
+    
+    ;mov byte[eax],'a'  
+    ;mov byte[eax+1],'n'
+    ;mov byte[eax+2],'a'
+    ;mov byte[eax+3],0 
+    ;mov ecx,1
+    ;PRINT_CHAR [eax+ecx]
+    
     leave
     ret
+; ====================================================
 ; ====================================================
 xor_img_with_key:
     push ebp
