@@ -32,6 +32,8 @@ section .bss
     morse_off:  resd 1
     morse_msg:  resd 1
     rand_msg:   resd 1
+    brute_line: resd 1
+    brute_key:  resd 1
 
 section .text
 global main
@@ -43,8 +45,8 @@ main:
     mov ebp, esp
 
     mov eax, [ebp + 8]
-    PRINT_UDEC 4,eax
-    NEWLINE
+    ;PRINT_UDEC 4,eax
+    ;NEWLINE
     cmp eax, 1
     jne not_zero_param
 
@@ -74,15 +76,9 @@ not_zero_param:
     ; Let's get the task number. It will be stored at task variable's address.
     mov eax, [ebp + 12]
     push DWORD[eax + 8]
-    ;mov ecx,[eax+8]
-    ;xor edx,edx
-    ;mov dl,byte[ecx]
-    ;PRINT_UDEC 4,edx
-    ;NEWLINE
     call atoi
     add esp, 4
-   ; PRINT_UDEC 4,eax
-   ; NEWLINE
+   
     mov [task], eax
     
     
@@ -107,9 +103,39 @@ solve_task1:
     push dword[img]
     call bruteforce_singlebyte_xor
     add esp,4
+    
+    xor ecx,ecx
+    xor edx,edx
+    
+    mov dx,ax
+    push edx
+    shr eax,16
+    mov cx,ax
+    push ecx
+    
+    push dword[img_backup]
+    call print_task1
+    add esp,12
     jmp done
+    
 solve_task2:
-    ; TODO Task2
+    push dword[img]
+    call bruteforce_singlebyte_xor
+    add esp,4
+    
+    xor ecx,ecx
+    xor edx,edx
+    
+    mov dx,ax
+    push edx
+    shr eax,16
+    mov cx,ax
+    push ecx
+    
+    push dword[img_backup]
+    call encrypt_msg_task2
+    add esp,12
+    
     jmp done
 solve_task3:
     ; TODO Task3
@@ -152,6 +178,125 @@ done:
     ret
 
 ; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+encrypt_msg_task2:
+    push ebp
+    mov ebp,esp
+    
+    ; the decrypted image
+    mov eax,[ebp+8]
+    ; the old key
+    mov ebx,[ebp+12]
+    ; the old line
+    mov edx,[ebp+16]
+    
+    
+    ; the new line
+    add edx,1
+    ; save the new line
+    push edx
+    push eax
+    
+    imul ebx,2
+    add ebx,3
+    xor edx,edx
+    mov eax,ebx
+    mov ecx,5
+    div ecx
+    sub eax,4
+    ; store the new key
+    mov ebx,eax
+    
+    ; restore the img address
+    pop eax
+    ; restore the new line
+    pop edx
+    
+    
+    push edx
+    push eax
+    call encrypt_reply
+    add esp,8
+    
+    push ebx
+    push eax
+    call encrypt_new_key
+    add esp,8
+    
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img_backup]
+    call print_image
+    add esp,12    
+    
+    leave
+    ret
+
+; =====================================================
+encrypt_new_key:
+    push ebp
+    mov ebp,esp
+    
+    push eax
+    push ebx
+    push ecx
+    push edx
+    
+    
+    ; the original msg
+    mov eax,[ebp+8]
+    ; the new key
+    mov ebx,[ebp+12]
+    
+    mov ecx,[img_height]
+    mov edx,[img_width]
+    imul edx,ecx
+    
+    xor ecx,ecx
+encrypt:
+    mov esi,[eax+4*ecx]
+    xor esi,ebx
+    mov [eax+4*ecx],esi
+    add ecx,1
+    cmp ecx,edx
+    jnz encrypt
+       
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    
+    leave
+    ret
+; ====================================================
+encrypt_reply:
+    push ebp
+    mov ebp,esp
+    
+    push eax
+    push ebx
+    push ecx
+    push edx
+    
+    ; the original img
+    mov eax,[ebp+8]
+    ; the new line
+    mov edx,[ebp+12]
+    
+    mov ecx,edx
+    mov ebx,[img_width]
+    imul ecx,ebx
+    PRINT_UDEC 4,ecx
+    
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+    
+    leave
+    ret
+
+
+; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 bruteforce_singlebyte_xor:
     push ebp
     mov ebp,esp
@@ -168,8 +313,7 @@ bruteforce_singlebyte_xor:
     xor ebx,ebx
     mov ebx,ecx
     imul ebx,4
-    PRINT_UDEC 4,ebx
-    NEWLINE
+    
     push ebx
     call malloc
     ; get backup location
@@ -179,7 +323,8 @@ bruteforce_singlebyte_xor:
     pop eax
     ; restore the img dimension
     pop ecx   
-    ; set the key start from 0
+    
+    ; start with key from 0
     xor esi,esi   
 brute:
     
@@ -189,38 +334,148 @@ brute:
     push dword[img]
     call backup_img
     add esp,12
-
-    
+   
+     ; we apply XOR with key on that copy    
     push ecx
     push esi
     push dword[img_backup]
     call xor_img_with_key
-    add esp,12
-   
-  
+    add esp,12   
+    
+    ; check for reviert
+    push ecx
+    push dword[img_backup]
+    call check_for_revient
+    add esp,8
+    
+    ; if we found the key, break bruteforce
+    cmp eax,-1
+    jnz found_right_key
+    
     ; increment key and check its size
     add esi,1
     cmp esi,256
     jl brute
+ 
+found_right_key:
+     mov [brute_line],eax
+     mov [brute_key],esi
+     mov ebx,[img_width]
+     imul eax,ebx
+     mov edx,[img_backup]
+     
+     xor eax,eax
+     xor ecx,ecx
+     
+     mov ecx,[brute_key]
+     add eax,ecx
+     shl eax,16
+     xor ecx,ecx
+     mov ecx,[brute_line]
+     add eax,ecx
+       
+    leave
+    ret
+; ====================================================
+print_task1:
+    push ebp
+    mov ebp,esp
     
-    ; how to print the string
-    ;mov eax,4
-    ;push eax
-    ;call malloc
-    ;mov [rand_msg],eax
-    ;add esp,4
-    ;mov eax,[rand_msg]
+    push eax
+    push ebx
+    push ecx
+    push edx
     
-    ;mov byte[eax],'a'  
-    ;mov byte[eax+1],'n'
-    ;mov byte[eax+2],'a'
-    ;mov byte[eax+3],0 
-    ;mov ecx,1
-    ;PRINT_CHAR [eax+ecx]
+    ; the xor-ed image
+    mov eax,[ebp+8]
+    ; the key
+    mov ebx,[ebp+12]
+    ; the original line
+    mov edx,[ebp+16]
+      
+    push ebx
+       
+    mov ecx,[img_width]
+    imul ecx,edx
+    
+print_mesg_task1:
+    mov ebx,[eax+4*ecx]
+    cmp ebx,0
+    jz end_print_mesg_task1
+    PRINT_CHAR ebx
+    add ecx,1
+    jmp print_mesg_task1
+    
+end_print_mesg_task1:
+    pop ebx
+    NEWLINE
+    PRINT_UDEC 4,ebx
+    NEWLINE
+    PRINT_UDEC 4,edx
+    NEWLINE
+    
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
     
     leave
     ret
 ; ====================================================
+check_for_revient:
+    push ebp
+    mov ebp,esp
+    
+    push ebx
+    push ecx
+    push edx
+      
+    mov eax,[ebp+8]
+    mov edx,[ebp+12]
+    
+    xor ecx,ecx
+    sub edx,10
+search_rev:
+    mov ebx,[eax+4*ecx]
+    cmp ebx,'r'
+    jnz not_revient
+    mov ebx,[eax+4*ecx+4]
+    cmp ebx,'e'
+    jnz not_revient
+    mov ebx,[eax+4*ecx+8]
+    cmp ebx,'v'
+    jnz not_revient
+    mov ebx,[eax+4*ecx+12]
+    cmp ebx,'i'
+    jnz not_revient
+    mov ebx,[eax+4*ecx+16]
+    cmp ebx,'e'
+    jnz not_revient
+    mov ebx,[eax+4*ecx+20]
+    cmp ebx,'n'
+    jnz not_revient
+    mov ebx,[eax+4*ecx+24]
+    cmp ebx,'t'
+    jnz not_revient
+    ; after revient is found  
+    xor edx,edx
+    mov eax,ecx
+    mov ebx,[img_width]
+    div ebx
+    jmp end_check_for_revient
+not_revient:
+    add ecx,1
+    cmp ecx,edx
+    jnz search_rev
+    mov eax,-1
+end_check_for_revient:    
+    pop edx
+    pop ecx
+    pop ebx
+   
+    leave
+    ret
+
 ; ====================================================
 xor_img_with_key:
     push ebp
@@ -230,17 +485,14 @@ xor_img_with_key:
     push ebx
     push ecx
     push edx
-    
-    
-    
+        
     ; first arg - the image address
     mov eax,[ebp+8]
     ; second arg - the key
     mov ebx,[ebp+12]
     ; third arg - the img dimension
     mov edx,[ebp+16]
- 
- 
+  
     xor ecx,ecx
 xor_img:
     push edx
@@ -248,33 +500,20 @@ xor_img:
     xor edx,ebx
    
     mov [eax+4*ecx],edx
-    
-    
+        
     add ecx,1
     pop edx
     cmp ecx,edx
     jnz xor_img
-    
-    ; push dword[img_height]
-    ; push dword[img_width]
-    ; push dword[img_backup]
-    ; call print_image
-    ; add esp,12
-    
-   
-    
-    
+
     pop edx
     pop ecx
     pop ebx
     pop eax
-   
-    
+       
     leave 
     ret
-
-
-
+    
 ; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 morse_encrypt:
     push ebp
