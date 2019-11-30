@@ -160,6 +160,8 @@ bruteforce_singlebyte_xor:
     mov edx,[img_width]
     imul ecx,edx
     
+    ; save the img dimension
+    push ecx
     ; save the original img
     push eax
     xor ebx,ebx
@@ -174,22 +176,88 @@ bruteforce_singlebyte_xor:
     add esp,4
     ; restore original img
     pop eax
+    ; restore the img dimension
+    pop ecx
     
-    mov ebx,[img_height]
-    mov edx,[img_width]
-    imul ebx,edx
-    mov ecx,ebx
+    ; set the key start from 0
+    xor esi,esi
     
+brute:
+    
+    ; with every key, we make a new copy  
     push ecx
     push dword[img_backup]
     push dword[img]
     call backup_img
     add esp,12
-   
+
     
+    push ecx
+    push esi
+    push dword[img_backup]
+    call xor_img_with_key
+    add esp,12
+    
+    
+    ; increment key and check its size
+    add esi,1
+    cmp esi,256
+    jl brute
+   
+     
     leave
     ret
-
+; ====================================================
+xor_img_with_key:
+    push ebp
+    mov ebp,esp
+    
+    push eax
+    push ebx
+    push ecx
+    push edx
+    
+    
+    
+    ; first arg - the image address
+    mov eax,[ebp+8]
+    ; second arg - the key
+    mov ebx,[ebp+12]
+    ; third arg - the img dimension
+    mov edx,[ebp+16]
+ 
+ 
+    xor ecx,ecx
+xor_img:
+    push edx
+    mov edx,[eax+4*ecx]
+    xor edx,ebx
+   
+    mov [eax+4*ecx],edx
+    
+    
+    add ecx,1
+    pop edx
+    cmp ecx,edx
+    jnz xor_img
+    
+    ; push dword[img_height]
+    ; push dword[img_width]
+    ; push dword[img_backup]
+    ; call print_image
+    ; add esp,12
+    
+   
+    
+    
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
+   
+    
+    leave 
+    ret
 
 
 
