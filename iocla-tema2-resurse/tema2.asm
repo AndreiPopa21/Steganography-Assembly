@@ -103,6 +103,9 @@ not_zero_param:
 
 solve_task1:
     ; TODO Task1
+    push dword[img]
+    call bruteforce_singlebyte_xor
+    add esp,4
     jmp done
 solve_task2:
     ; TODO Task2
@@ -112,22 +115,17 @@ solve_task3:
     mov eax,[ebp+12]
     mov ecx,[eax+12]
     mov [morse_msg],ecx
-    xor edx,edx
-    mov ebx,[morse_msg]
-    mov dl,byte[ebx+1]
-    PRINT_UDEC 4,edx
     
     mov eax,[ebp+12]
     push dword[eax+16]
     call atoi
     mov [morse_off],eax
- 
-   ; mov eax,[ebp+12]
-   ; mov ebx,[eax+16]
     
-    ;PRINT_UDEC 4, ebx
-    ;PRINT_UDEC 4,[ecx]
-    NEWLINE
+    push eax
+    push ecx
+    push dword[img]
+    call morse_encrypt
+    add esp,12
     
     jmp done
 solve_task4:
@@ -152,8 +150,66 @@ done:
     leave
     ret
 
-; =================================================
+; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+bruteforce_singlebyte_xor:
+    push ebp
+    mov ebp,esp
+    ; get the image
+    mov eax,[ebp+8]
+    mov ecx,[img_height]
+    mov edx,[img_width]
+    imul ecx,edx
+    
+    ; save the original img
+    push eax
+    xor ebx,ebx
+    mov ebx,ecx
+    imul ebx,4
+    PRINT_UDEC 4,ebx
+    NEWLINE
+    push ebx
+    call malloc
+    ; get backup location
+    mov [img_backup],eax
+    add esp,4
+    ; restore original img
+    pop eax
+    
+    mov ebx,[img_height]
+    mov edx,[img_width]
+    imul ebx,edx
+    mov ecx,ebx
+    
+    push ecx
+    push dword[img_backup]
+    push dword[img]
+    call backup_img
+    add esp,12
+   
+    
+    leave
+    ret
 
+
+
+
+; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+morse_encrypt:
+    push ebp
+    mov ebp,esp
+    leave
+    ret
+
+
+
+
+
+
+
+
+
+
+; =================================================
 blur:
     push ebp
     mov ebp,esp
@@ -205,7 +261,8 @@ backup_img:
     mov ebx,[ebp+12]
     ; dimensiunea vectorul
     mov ecx,[ebp+16]
-
+    
+    
 back_proc:
     mov edx,[eax+4*ecx-4]
     mov [ebx+4*ecx-4],edx    
