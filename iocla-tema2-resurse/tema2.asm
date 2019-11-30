@@ -285,7 +285,35 @@ encrypt_reply:
     mov ecx,edx
     mov ebx,[img_width]
     imul ecx,ebx
-    PRINT_UDEC 4,ecx
+    
+    mov dword[eax+4*ecx],'C'
+    mov dword[eax+4*ecx+4],39
+    mov dword[eax+4*ecx+8],'e'
+    mov dword[eax+4*ecx+12],'s'
+    mov dword[eax+4*ecx+16],'t'
+    mov dword[eax+4*ecx+20],' '
+    mov dword[eax+4*ecx+24],'u'
+    mov dword[eax+4*ecx+28],'n'
+    mov dword[eax+4*ecx+32],' '
+    mov dword[eax+4*ecx+36],'p'
+    mov dword[eax+4*ecx+40],'r'
+    mov dword[eax+4*ecx+44],'o'
+    mov dword[eax+4*ecx+48],'v'
+    mov dword[eax+4*ecx+52],'e'
+    mov dword[eax+4*ecx+56],'r'
+    mov dword[eax+4*ecx+60],'b'
+    mov dword[eax+4*ecx+64],'e'
+    mov dword[eax+4*ecx+68],' '
+    mov dword[eax+4*ecx+72],'f'
+    mov dword[eax+4*ecx+76],'r'
+    mov dword[eax+4*ecx+80],'a'
+    mov dword[eax+4*ecx+84],'n'
+    mov dword[eax+4*ecx+88],'c'
+    mov dword[eax+4*ecx+92],'a'
+    mov dword[eax+4*ecx+96],'i'
+    mov dword[eax+4*ecx+100],'s'
+    mov dword[eax+4*ecx+104],'.'
+    mov dword[eax+4*ecx+108],0    
     
     pop edx
     pop ecx
