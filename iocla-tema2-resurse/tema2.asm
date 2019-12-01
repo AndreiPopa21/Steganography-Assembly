@@ -34,6 +34,7 @@ section .bss
     rand_msg:   resd 1
     brute_line: resd 1
     brute_key:  resd 1
+    lsb_msg:    resd 1
 
 section .text
 global main
@@ -155,8 +156,22 @@ solve_task3:
     add esp,12
     
     jmp done
+    
 solve_task4:
-    ; TODO Task4
+    mov eax,[ebp+12]
+    ; the char* message
+    mov ebx,[eax+12]
+    ; the char* byte_id
+    push dword[eax+16]
+    call atoi
+    ; the int byte_id
+    mov ecx,eax
+    push ecx
+    push ebx
+    push dword[img]
+    call lsb_encode
+    add esp,12
+    
     jmp done
 solve_task5:
     ; TODO Task5
@@ -174,6 +189,20 @@ done:
     ; Epilogue
     ; Do not modify!
     xor eax, eax
+    leave
+    ret
+; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+lsb_encode:
+    push ebp
+    mov ebp,esp
+    
+    ; the original image
+    mov eax,[ebp+8]
+    ; the message
+    mov ebx,[ebp+12]
+    ; the byte id
+    mov edx,[ebp+16]
+    
     leave
     ret
 
