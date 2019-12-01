@@ -186,8 +186,11 @@ solve_task5:
     push dword[eax+12]
     call atoi
     add esp,4
-    PRINT_UDEC 4,eax
-    NEWLINE
+    
+    push eax
+    push dword[img]
+    call lsb_decode
+    add esp,8   
     jmp done
     
     
@@ -211,6 +214,37 @@ done:
 lsb_decode:
     push ebp
     mov ebp,esp
+    
+    mov eax,[ebp+8] ; the original image
+    mov edx,[ebp+12] ; the byte id
+    
+    sub edx,1 ; get the start index
+    mov ecx,edx ; set the iter 
+lsb_decode_chars:
+    xor ebx,ebx ; build ASCII code (it will be mirrored)
+    xor edx,edx
+build_ascii:
+    cmp edx,8
+    jz end_build_ascii
+    shl ebx,1
+    mov edi,[eax+4*ecx]
+    add ecx,1
+    test edi,1
+    jnz build_put_1
+    jmp build_put_0
+build_put_1:
+    add ebx,1
+build_put_0: 
+    add edx,1   
+    jmp build_ascii 
+end_build_ascii:
+    test ebx,ebx
+    jz end_lsb_decode_chars
+    PRINT_CHAR ebx
+    jmp lsb_decode_chars
+
+end_lsb_decode_chars:
+    NEWLINE
     leave
     ret    
             
