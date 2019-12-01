@@ -102,6 +102,7 @@ not_zero_param:
     je solve_task6
     jmp done
 
+
 solve_task1:
     ; TODO Task1
     push dword[img]
@@ -122,6 +123,7 @@ solve_task1:
     add esp,12
     jmp done
     
+    
 solve_task2:
     push dword[img]
     call bruteforce_singlebyte_xor
@@ -138,9 +140,10 @@ solve_task2:
     
     push dword[img_backup]
     call encrypt_msg_task2
-    add esp,12
-    
+    add esp,12    
     jmp done
+
+
 solve_task3:
     ; TODO Task3
     mov eax,[ebp+12]
@@ -156,9 +159,9 @@ solve_task3:
     push ecx
     push dword[img]
     call morse_encrypt
-    add esp,12
-    
+    add esp,12  
     jmp done
+    
     
 solve_task4:
     mov eax,[ebp+12]
@@ -173,12 +176,21 @@ solve_task4:
     push ebx
     push dword[img]
     call lsb_encode
-    add esp,12
-    
+    add esp,12  
     jmp done
+    
+    
 solve_task5:
     ; TODO Task5
+    mov eax,[ebp+12]
+    push dword[eax+12]
+    call atoi
+    add esp,4
+    PRINT_UDEC 4,eax
+    NEWLINE
     jmp done
+    
+    
 solve_task6:
     call blur
     jmp done
@@ -194,7 +206,14 @@ done:
     xor eax, eax
     leave
     ret
-    
+
+; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+lsb_decode:
+    push ebp
+    mov ebp,esp
+    leave
+    ret    
+            
 ; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 lsb_encode:
     push ebp
