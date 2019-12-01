@@ -35,6 +35,9 @@ section .bss
     brute_line: resd 1
     brute_key:  resd 1
     lsb_msg:    resd 1
+    lsb_msg_len:resd 1
+    lsb_start:  resd 1
+    lsb_end:    resd 1
 
 section .text
 global main
@@ -191,6 +194,7 @@ done:
     xor eax, eax
     leave
     ret
+    
 ; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
 lsb_encode:
     push ebp
@@ -202,6 +206,157 @@ lsb_encode:
     mov ebx,[ebp+12]
     ; the byte id
     mov edx,[ebp+16]
+    
+    ;the start index
+    sub edx,1
+    mov ecx,edx
+    
+    ;save the start index
+    push ecx   
+    xor ecx,ecx
+strlen_lsb:
+    add ecx,1
+    cmp byte[ebx+ecx],0
+    jnz strlen_lsb
+    ; get the length of message
+    mov esi,ecx
+    ; restore the start index    
+    pop ecx
+    
+    mov edx,esi
+    imul edx,8
+    add edx,ecx
+    
+    mov dword[lsb_msg_len],esi ; int
+    mov dword[lsb_start],ecx ; int
+    mov dword[lsb_end],edx ;int
+    mov dword[img],eax ; int*
+    mov dword[lsb_msg],ebx ; char*
+    
+    mov ecx,[lsb_start] ; 1 - does not reset
+    xor edx,edx
+    mov esi, [lsb_msg_len]
+    
+lsb_chars:
+    cmp edx,esi
+    jz lsb_chars_end
+    
+    xor eax,eax
+    mov ebx,[lsb_msg]
+    mov al,byte[ebx+edx]
+    push eax
+    call get_binary
+    add esp,4 ; eax are valoarea binara in oglinda
+    
+    push edx ; save iter for reuse
+    
+    mov ebx,[img]
+    xor edx,edx
+lsb_bits:
+    cmp edx,8
+    jz end_bits
+    test al,1
+    jz lsb_bits_even
+    jmp lsb_bits_odd
+lsb_bits_even: ; put 0
+    mov edi,[ebx+4*ecx]
+    test edi,1
+    jz skip_put_0
+    sub edi,1
+    mov [ebx+4*ecx],edi
+skip_put_0:    
+    add ecx,1
+    add edx,1
+    shr eax,1
+    jmp lsb_bits
+lsb_bits_odd: ; put 1
+    mov edi,[ebx+4*ecx]
+    test edi,1
+    jnz skip_put_1
+    add edi,1
+    mov [ebx+4*ecx],edi   
+skip_put_1:
+    add ecx,1
+    add edx,1
+    shr eax,1
+    jmp lsb_bits
+end_bits:
+    
+    pop edx ; restore the old iter
+    add edx,1
+    jmp lsb_chars     
+lsb_chars_end:
+    
+    
+    ; we need to encrypt the 0 char as well
+    xor edx,edx
+    mov ebx,[img]
+lsb_terminator:
+    cmp edx,8
+    jz lsb_terminator_end   
+    mov edi,[ebx+4*ecx]
+    test edi,1
+    jz skip_terminator
+    sub edi,1
+    mov [ebx+4*ecx],edi
+skip_terminator:    
+    add ecx,1
+    add edx,1
+    jmp lsb_terminator   
+lsb_terminator_end:  
+
+          
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img]
+    call print_image
+    add esp,12    
+      
+    leave
+    ret
+  
+; ====================================================
+get_binary:
+    push ebp
+    mov ebp,esp
+    
+    push ebx
+    push ecx
+    push edx
+    
+    mov ebx,[ebp+8] ; the ASCII char
+       
+    xor eax,eax
+    xor ecx,ecx
+convert_bin:
+    test bl,1
+    jz conv_even
+    jmp conv_odd
+conv_even:
+    ;PRINT_STRING "0 "
+    shl eax,1
+    shr ebx,1
+    add ecx,1
+    ;NEWLINE
+    cmp ecx,8
+    jz fin_convert
+    jmp convert_bin
+conv_odd:
+    ;PRINT_STRING "1 "
+    ;NEWLINE
+    shl eax,1
+    add eax,1
+    shr ebx,1
+    add ecx,1
+    cmp ecx,8
+    jz fin_convert
+    jmp convert_bin
+    
+fin_convert:
+    
+    pop edx
+    pop ecx
+    pop ebx
     
     leave
     ret
