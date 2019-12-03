@@ -38,6 +38,7 @@ section .bss
     lsb_msg_len:resd 1
     lsb_start:  resd 1
     lsb_end:    resd 1
+    morse_msg_len: resd 1
 
 section .text
 global main
@@ -222,9 +223,33 @@ morse_encrypt:
     mov ebx,[ebp+12] ; the message
     mov edx,[ebp+16] ; the byte id
     
-    mov ecx,[ebx]
-    PRINT_UDEC 4,edx
+    push eax
+    push ebx
+    call my_strlen
+    add esp,4
+    mov [morse_msg_len],eax
+    pop eax
     
+    PRINT_UDEC 4,[morse_msg_len]
+    
+    leave
+    ret
+
+; =====================================================
+my_strlen:
+    push ebp
+    mov ebp,esp
+    push ecx   
+    mov eax,[ebp+8]
+    xor ecx,ecx
+run_strlen:
+    cmp byte[eax+ecx],0
+    jz end_strlen
+    add ecx,1
+    jmp run_strlen    
+end_strlen:    
+    mov eax,ecx
+    pop ecx
     leave
     ret
 
