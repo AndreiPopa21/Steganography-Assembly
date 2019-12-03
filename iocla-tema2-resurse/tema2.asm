@@ -151,8 +151,11 @@ solve_task3:
     mov [morse_msg],ecx
     
     mov eax,[ebp+12]
+    push ecx
     push dword[eax+16]
     call atoi
+    add esp,4
+    pop ecx
     mov [morse_off],eax
     
     push eax
@@ -207,6 +210,21 @@ done:
     ; Epilogue
     ; Do not modify!
     xor eax, eax
+    leave
+    ret
+
+; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+morse_encrypt:
+    push ebp
+    mov ebp,esp
+    
+    mov eax,[ebp+8] ; the original image
+    mov ebx,[ebp+12] ; the message
+    mov edx,[ebp+16] ; the byte id
+    
+    mov ecx,[ebx]
+    PRINT_UDEC 4,edx
+    
     leave
     ret
 
@@ -780,22 +798,7 @@ xor_img:
     ret
     
 ; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-morse_encrypt:
-    push ebp
-    mov ebp,esp
-    leave
-    ret
 
-
-
-
-
-
-
-
-
-
-; =================================================
 blur:
     push ebp
     mov ebp,esp
