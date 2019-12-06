@@ -38,8 +38,6 @@ section .bss
     lsb_msg_len:resd 1
     lsb_start:  resd 1
     lsb_end:    resd 1
-    morse_msg_len: resd 1
-    morse_char_code: resd 1
 
 section .text
 global main
@@ -150,7 +148,6 @@ solve_task3:
     ; TODO Task3
     mov eax,[ebp+12]
     mov ecx,[eax+12]
-    mov [morse_msg],ecx ; store in bss the message
     
     mov eax,[ebp+12]
     push ecx ; save ecx on stack
@@ -159,11 +156,18 @@ solve_task3:
     add esp,4
     pop ecx ; restore ecx from stack
 
-    push eax ; arg3 - byte-d
+    push eax ; arg3 - byte-id
     push ecx ; arg2 - the message
     push dword[img] ; arg1 - the image
     call morse_encrypt
     add esp,12  
+    
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img]
+    call print_image
+    add esp,12
+    
     jmp done
     
     
@@ -214,41 +218,38 @@ done:
     leave
     ret
 
-; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+; +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 morse_encrypt:
     push ebp
     mov ebp,esp
     
-    mov eax,[ebp+8] ; the original image
-    mov ebx,[ebp+12] ; the message
-    mov edx,[ebp+16] ; the byte id
-  
-    mov [img],eax
+    mov eax,[ebp+8] ; imaginea originala
+    mov ebx,[ebp+12] ; mesajul
+    mov edx,[ebp+16] ; byte-id
+                     ; edx este un contor care tine evidenta pixelului
+                     ; curent din poza. nu se reseteaza
     
-    xor ecx,ecx
-morse_char:
-    xor eax,eax ; empty eax for storing each char
-    cmp byte[ebx+ecx],0
+    mov edi,eax ; se salveaza imaginea in edi
+    
+    xor ecx,ecx ; cu ecx se parcurge fiecare caracter din mesaj
+morse_char:   
+    cmp byte[ebx+ecx],0 ; se verifica daca nu s-a terminat mesajul
     jz end_morse_char
-    mov al,byte[ebx+ecx] ; take each character
+  
+    xor eax,eax ; se curata eax, se stocheaza in acesta un caracter
+    mov al,byte[ebx+ecx]
     
-    push dword[img]
-    push eax
+    push eax ; arg2 - caracterul din mesaj
+    push edi ; arg1 - imaginea
     call morse_encode_one_char
     add esp,8
     
     add ecx,1
     jmp morse_char
-end_morse_char:  
-    sub edx,1
-    mov ebx,[img]
-    mov dword[ebx+4*edx],0
     
-    push dword[img_height]
-    push dword[img_width]
-    push dword[img]
-    call print_image
-    add esp,12
+end_morse_char:  
+    sub edx,1 ; se suprascrie ultimul space cu valoarea 0
+    mov dword[edi+4*edx],0
     
     leave
     ret
@@ -262,8 +263,9 @@ morse_encode_one_char:
     
     push ebx
     
-    mov eax,[ebp+8] ; the char to be encoded
-    mov ebx,[ebp+12] ; the image
+    mov ebx,[ebp+8] ; the image
+    mov eax,[ebp+12] ; the char to be encoded
+    
     cmp al,'A'
     jz a_char
     cmp al,'B'
