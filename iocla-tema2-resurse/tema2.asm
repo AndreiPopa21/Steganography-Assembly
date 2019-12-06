@@ -254,12 +254,12 @@ end_morse_char:
     leave
     ret
 
-; =====================================================
+; ................................................................
 morse_encode_one_char:
     push ebp
     mov ebp,esp
     
-    ; edx contains index, not to modify
+    ; edx se incrementeaza constant, dar nu se reseteaza
     
     push ebx
     
@@ -340,6 +340,9 @@ morse_encode_one_char:
     jz nine_char
     cmp al,'0'
     jz zero_char
+    
+    ; se scrie pentru fiecare litera codul corespunzator in . sau -
+    ; se concateneaza la final mereu caracterul SPACE
     
 a_char:
     mov dword[ebx+4*edx],46
@@ -632,26 +635,32 @@ end_morse_conv:
     leave
     ret
 
-; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+
+
+
+; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 lsb_decode:
     push ebp
     mov ebp,esp
     
-    mov eax,[ebp+8] ; the original image
-    mov edx,[ebp+12] ; the byte id
+    mov eax,[ebp+8] ; imaginea originala
+    mov edx,[ebp+12] ; byte-id
     
-    sub edx,1 ; get the start index
-    mov ecx,edx ; set the iter 
+    sub edx,1 ; se obtine indexul corect de start
+    
+    ; in continuare, se construiesc caracterele bit cu bit
+    ; in ebx se va construi codul ASCII al fiecarui char
+    mov ecx,edx ; se reseteaza iteratorul 
 lsb_decode_chars:
-    xor ebx,ebx ; build ASCII code (it will be mirrored)
+    xor ebx,ebx 
     xor edx,edx
 build_ascii:
-    cmp edx,8
+    cmp edx,8 ; se parcurg grupuri de cate 8 pixeli pentru un caracter
     jz end_build_ascii
     shl ebx,1
     mov edi,[eax+4*ecx]
     add ecx,1
-    test edi,1
+    test edi,1 ; se foloseste o masca de biti pentru a vedea ultimul bit
     jnz build_put_1
     jmp build_put_0
 build_put_1:
@@ -662,7 +671,8 @@ build_put_0:
 end_build_ascii:
     test ebx,ebx
     jz end_lsb_decode_chars
-    PRINT_CHAR ebx
+    ; in ebx exista caracterul construit bit cu bit
+    PRINT_CHAR ebx ; se afiseaza in stdout
     jmp lsb_decode_chars
 
 end_lsb_decode_chars:
@@ -670,7 +680,7 @@ end_lsb_decode_chars:
     leave
     ret    
             
-; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 lsb_encode:
     push ebp
     mov ebp,esp
