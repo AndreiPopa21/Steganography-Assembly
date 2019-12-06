@@ -318,6 +318,26 @@ morse_encode_one_char:
     jz z_char
     cmp al,','
     jz comma_char
+    cmp al,'1'
+    jz one_char
+    cmp al,'2'
+    jz two_char
+    cmp al,'3'
+    jz three_char
+    cmp al,'4'
+    jz four_char
+    cmp al,'5'
+    jz five_char
+    cmp al,'6'
+    jz six_char
+    cmp al,'7'
+    jz seven_char
+    cmp al,'8'
+    jz eight_char
+    cmp al,'9'
+    jz nine_char
+    cmp al,'0'
+    jz zero_char
     
 a_char:
     mov dword[ebx+4*edx],46
@@ -607,26 +627,6 @@ zero_char:
  
 end_morse_conv:   
     pop ebx
-    leave
-    ret
-
-; =====================================================
-my_strlen:
-    push ebp
-    mov ebp,esp
-    push ecx   
-    mov eax,[ebp+8]
-    xor ecx,ecx
-run_strlen:
-    cmp byte[eax+ecx],0
-    jz end_strlen
-    ;mov bl,byte[eax+ecx]
-    ;PRINT_CHAR bl
-    add ecx,1
-    jmp run_strlen    
-end_strlen:    
-    mov eax,ecx
-    pop ecx
     leave
     ret
 
