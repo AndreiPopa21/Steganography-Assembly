@@ -158,16 +158,7 @@ solve_task3:
     call atoi ; atoi on byte-ide
     add esp,4
     pop ecx ; restore ecx from stack
-    mov [morse_off],eax ; store in bss the byte-id
-    
-    ;push dword[img_height]
-    ;push dword[img_width]
-    ;push dword[img]
-    ;call print_image
-    ;add esp,12
-    
-    ;jmp done
-    
+
     push eax ; arg3 - byte-d
     push ecx ; arg2 - the message
     push dword[img] ; arg1 - the image
@@ -231,21 +222,8 @@ morse_encrypt:
     mov eax,[ebp+8] ; the original image
     mov ebx,[ebp+12] ; the message
     mov edx,[ebp+16] ; the byte id
-    
-    ;sub edx,1 ; get the index (byte-id is index+1)
-    
-    
+  
     mov [img],eax
-    
-    
-   ; push edx ; save the index on stack
-   ; push ebx
-   ; push ebx
-   ; call my_strlen
-   ; add esp,4
-    ;mov [morse_msg_len],eax ; get the message length
-   ; pop ebx
-   ; pop edx ; restore the index from stack
     
     xor ecx,ecx
 morse_char:
@@ -254,12 +232,10 @@ morse_char:
     jz end_morse_char
     mov al,byte[ebx+ecx] ; take each character
     
-    push ebx ; ? is it necessary
     push dword[img]
     push eax
     call morse_encode_one_char
     add esp,8
-    pop ebx
     
     add ecx,1
     jmp morse_char
@@ -283,7 +259,9 @@ morse_encode_one_char:
     mov ebp,esp
     
     ; edx contains index, not to modify
-   
+    
+    push ebx
+    
     mov eax,[ebp+8] ; the char to be encoded
     mov ebx,[ebp+12] ; the image
     cmp al,'A'
@@ -536,9 +514,99 @@ comma_char:
     mov dword[ebx+4*edx+20],45
     mov dword[ebx+4*edx+24],32
     add edx,7
-    jmp end_morse_conv  
+    jmp end_morse_conv
+one_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],45
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+two_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],45
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+three_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],45
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+four_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],45
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+five_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],46
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+six_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],46
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+seven_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],46
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+eight_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],46
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+nine_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],46
+    mov dword[ebx+4*edx+20],32
+    add edx,6
+    jmp end_morse_conv
+zero_char:  
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],45
+    mov dword[ebx+4*edx+20],32
+    add edx,6
  
 end_morse_conv:   
+    pop ebx
     leave
     ret
 
