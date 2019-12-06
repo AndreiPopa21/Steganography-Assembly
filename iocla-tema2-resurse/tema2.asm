@@ -39,6 +39,7 @@ section .bss
     lsb_start:  resd 1
     lsb_end:    resd 1
     morse_msg_len: resd 1
+    morse_char_code: resd 1
 
 section .text
 global main
@@ -149,19 +150,27 @@ solve_task3:
     ; TODO Task3
     mov eax,[ebp+12]
     mov ecx,[eax+12]
-    mov [morse_msg],ecx
+    mov [morse_msg],ecx ; store in bss the message
     
     mov eax,[ebp+12]
-    push ecx
-    push dword[eax+16]
-    call atoi
+    push ecx ; save ecx on stack
+    push dword[eax+16] ; decode the byte-id
+    call atoi ; atoi on byte-ide
     add esp,4
-    pop ecx
-    mov [morse_off],eax
+    pop ecx ; restore ecx from stack
+    mov [morse_off],eax ; store in bss the byte-id
     
-    push eax
-    push ecx
-    push dword[img]
+    ;push dword[img_height]
+    ;push dword[img_width]
+    ;push dword[img]
+    ;call print_image
+    ;add esp,12
+    
+    ;jmp done
+    
+    push eax ; arg3 - byte-d
+    push ecx ; arg2 - the message
+    push dword[img] ; arg1 - the image
     call morse_encrypt
     add esp,12  
     jmp done
@@ -223,15 +232,313 @@ morse_encrypt:
     mov ebx,[ebp+12] ; the message
     mov edx,[ebp+16] ; the byte id
     
+    ;sub edx,1 ; get the index (byte-id is index+1)
+    
+    
+    mov [img],eax
+    
+    
+   ; push edx ; save the index on stack
+   ; push ebx
+   ; push ebx
+   ; call my_strlen
+   ; add esp,4
+    ;mov [morse_msg_len],eax ; get the message length
+   ; pop ebx
+   ; pop edx ; restore the index from stack
+    
+    xor ecx,ecx
+morse_char:
+    xor eax,eax ; empty eax for storing each char
+    cmp byte[ebx+ecx],0
+    jz end_morse_char
+    mov al,byte[ebx+ecx] ; take each character
+    
+    push ebx ; ? is it necessary
+    push dword[img]
     push eax
-    push ebx
-    call my_strlen
-    add esp,4
-    mov [morse_msg_len],eax
-    pop eax
+    call morse_encode_one_char
+    add esp,8
+    pop ebx
     
-    PRINT_UDEC 4,[morse_msg_len]
+    add ecx,1
+    jmp morse_char
+end_morse_char:  
+    sub edx,1
+    mov ebx,[img]
+    mov dword[ebx+4*edx],0
     
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img]
+    call print_image
+    add esp,12
+    
+    leave
+    ret
+
+; =====================================================
+morse_encode_one_char:
+    push ebp
+    mov ebp,esp
+    
+    ; edx contains index, not to modify
+   
+    mov eax,[ebp+8] ; the char to be encoded
+    mov ebx,[ebp+12] ; the image
+    cmp al,'A'
+    jz a_char
+    cmp al,'B'
+    jz b_char
+    cmp al,'C'
+    jz c_char
+    cmp al,'D'
+    jz d_char
+    cmp al,'E'
+    jz e_char
+    cmp al,'F'
+    jz f_char
+    cmp al,'G'
+    jz g_char
+    cmp al,'H'
+    jz h_char
+    cmp al,'I'
+    jz i_char
+    cmp al,'J'
+    jz j_char
+    cmp al,'K'
+    jz k_char
+    cmp al,'L'
+    jz l_char
+    cmp al,'M'
+    jz m_char
+    cmp al,'N'
+    jz n_char
+    cmp al,'O'
+    jz o_char
+    cmp al,'P'
+    jz p_char
+    cmp al,'Q'
+    jz q_char
+    cmp al,'R'
+    jz r_char
+    cmp al,'S'
+    jz s_char
+    cmp al,'T'
+    jz t_char
+    cmp al,'U'
+    jz u_char
+    cmp al,'V'
+    jz v_char
+    cmp al,'X'
+    jz x_char
+    cmp al,'Y'
+    jz y_char
+    cmp al,'W'
+    jz w_char
+    cmp al,'Z'
+    jz z_char
+    cmp al,','
+    jz comma_char
+    
+a_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],32
+    add edx,3
+    jmp end_morse_conv
+b_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+c_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+d_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+e_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],32
+    add edx,2
+    jmp end_morse_conv
+f_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+g_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+h_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+i_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],32
+    add edx,3
+    jmp end_morse_conv
+j_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+k_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+l_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+m_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],32
+    add edx,3
+    jmp end_morse_conv
+n_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],32
+    add edx,3
+    jmp end_morse_conv
+o_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+p_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+q_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+r_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+s_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+t_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],32
+    add edx,2
+    jmp end_morse_conv
+u_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+v_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+x_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+w_char:
+    mov dword[ebx+4*edx],46
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],32
+    add edx,4
+    jmp end_morse_conv
+y_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],46
+    mov dword[ebx+4*edx+8],45
+    mov dword[ebx+4*edx+12],45
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv
+z_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],32
+    add edx,5
+    jmp end_morse_conv  
+comma_char:
+    mov dword[ebx+4*edx],45
+    mov dword[ebx+4*edx+4],45
+    mov dword[ebx+4*edx+8],46
+    mov dword[ebx+4*edx+12],46
+    mov dword[ebx+4*edx+16],45
+    mov dword[ebx+4*edx+20],45
+    mov dword[ebx+4*edx+24],32
+    add edx,7
+    jmp end_morse_conv  
+ 
+end_morse_conv:   
     leave
     ret
 
@@ -245,6 +552,8 @@ my_strlen:
 run_strlen:
     cmp byte[eax+ecx],0
     jz end_strlen
+    ;mov bl,byte[eax+ecx]
+    ;PRINT_CHAR bl
     add ecx,1
     jmp run_strlen    
 end_strlen:    
