@@ -1194,7 +1194,7 @@ xor_img:
     leave 
     ret
     
-; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+; +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 blur:
     push ebp
@@ -1228,15 +1228,22 @@ blur:
     call blur_values
     add esp,8
     
+              
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img]
+    call print_image
+    add esp,12
+    
     leave 
     ret
  
-; ===============================================
+; .......................................................
 backup_img:
     push ebp
     mov ebp,esp
     
-    ; se salv
+    ; se salveaza vechii registrii pe stiva
     push eax
     push ebx
     push ecx
@@ -1245,8 +1252,7 @@ backup_img:
     mov eax,[ebp+8] ; adresa catre imaginea backup
     mov ebx,[ebp+12] ; adresa catre imaginea destinatie
     mov ecx,[ebp+16] ; dimensiunea vectorul
-    
-    
+       
 back_proc:
     mov edx,[eax+4*ecx-4]
     mov [ebx+4*ecx-4],edx    
@@ -1262,15 +1268,17 @@ back_proc:
     leave
     ret
     
-; ================================================   
+; ......................................................
 blur_values:
     push ebp
     mov ebp,esp
+    
     push eax
     push ebx
     push ecx
-    mov eax,[ebp+8]
-    mov ebx,[ebp+12]
+    
+    mov eax,[ebp+8] ; adresa catre imaginea originala
+    mov ebx,[ebp+12] ; adresa catre imaginea de backup
     mov ecx,[img_height]
     mov edx,[img_width]
     
@@ -1285,18 +1293,16 @@ iter_height:
 iter_width:   
     mov dword[blur_sum],0   
     ; =======================================
-    push edx
-    push ecx
-    push ebx
     push eax
-  
+    
+    push edx ; indexul coloanei curent
+    push ecx ; indexul liniei curente
+    push ebx  ; adresa catre imaginea de backup
     call get_current
     add [blur_sum],eax
-  
+    add esp,12
+    
     pop eax
-    pop ebx
-    pop ecx
-    pop edx
     ; =======================================
     push edx
     push ecx
@@ -1385,14 +1391,6 @@ iter_width:
     jmp iter_width
     
 blur_end:
-    mov eax,[img]
-    mov ebx,[img_width]
-    mov ecx,[img_height]
-    push ecx
-    push ebx
-    push eax
-    call print_image
-    add esp,12
     
     mov eax,[img_backup]
     push eax
@@ -1410,9 +1408,13 @@ get_current:
     push ebp
     mov ebp,esp
     
-    mov ebx,[ebp+12]
-    mov ecx,[ebp+16]
-    mov edx,[ebp+20]
+    push ebx
+    push ecx
+    push edx
+    
+    mov ebx,[ebp+8]
+    mov ecx,[ebp+12]
+    mov edx,[ebp+16]
     
     push ebx
     
@@ -1426,7 +1428,11 @@ get_current:
     
     pop ebx
     mov eax,[ebx+ecx]
-     
+    
+    pop edx
+    pop ecx
+    pop ebx
+    
     leave
     ret
 ; ====================================================
