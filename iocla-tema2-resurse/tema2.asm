@@ -984,76 +984,83 @@ bruteforce_singlebyte_xor:
     mov edx,[img_width]
     imul ecx,edx
     
-    push ecx ; se salveaza pe stiva dimensiunea imaginii
-    push eax ; se salveaza pe stiva imaginea originala
-    
-    ; se realizeaza o copie dinamica a imaginii
-    ; de fiecare data, se incearca o cheie si se altereaza 
-    ; imaginea originala. copia se utilizeaza pentru a o restaura
-    xor ebx,ebx
-    mov ebx,ecx
-    imul ebx,4
-    push ebx
-    call malloc
-    mov [img_backup],eax ; se salveaza copia in variabila img_backup
-    add esp,4
-    
-    pop eax ; se restaureaza imaginea originala
-    pop ecx  ; se restaureaza dimenisunea imaginii
-    
     xor esi,esi ; se incepe cu cheia de valoare 0
 brute:
-    
-    ; with every key, we make a new copy  
-    push ecx
-    push dword[img_backup]
-    push dword[img]
-    call backup_img
-    add esp,12
-   
-     ; we apply XOR with key on that copy    
+     ; se aplica XOR cu cheia curenta pe imagine
     push ecx
     push esi
-    push dword[img_backup]
+    push dword[img]
     call xor_img_with_key
     add esp,12   
     
-    ; check for reviert
+    ; se verifica daca prin decriptare, s-a obtinut revient
     push ecx
-    push dword[img_backup]
+    push dword[img]
     call check_for_revient
     add esp,8
     
-    ; if we found the key, break bruteforce
+    ; daca s-a gasit o cheie buna, se iese din bruteforce
     cmp eax,-1
     jnz found_right_key
     
-    ; increment key and check its size
+    ; daca nu s-a gasit cheia, se inverseaza operatia de XOR
+    push ecx
+    push esi
+    push dword[img]
+    call reverse_xor
+    add esp,12
+    
     add esi,1
     cmp esi,256
     jl brute
  
 found_right_key:
-     mov [brute_line],eax
-     mov [brute_key],esi
+    mov [brute_line],eax
+    mov [brute_key],esi
      
-     mov edx,[img_backup]
-     mov [img],edx
-     
-     
-     xor eax,eax
-     xor ecx,ecx
-     
-     mov ecx,[brute_key]
-     add eax,ecx
-     shl eax,16
-     xor ecx,ecx
-     mov ecx,[brute_line]
-     add eax,ecx
+    ; se salveaza atat linia mesajului, cat si cheia, in eax
+    ; cheia e salvata pe 16 biti, in a doua jumatate a lui eax
+    ; linia e salvata tot pe 16 biti, in prima jumatate a lui eax
+    xor eax,eax
+    xor ecx,ecx    
+    mov ecx,[brute_key]
+    add eax,ecx
+    shl eax,16
+    xor ecx,ecx
+    mov ecx,[brute_line]
+    add eax,ecx
        
     leave
     ret
+
+; ............................................................
+reverse_xor:
+    push ebp
+    mov ebp,esp
+    push eax
+    push ebx
+    push ecx
+    push edx
     
+    mov eax,[ebp+8] ; adresa catre imaginea originala
+    mov ebx,[ebp+12] ; cheia cu care s-a decriptat
+    mov ecx,[ebp+16] ; dimensiunea imaginii
+r_xor:
+    sub ecx,1
+    cmp ecx,-1
+    jz end_r_xor
+    mov edx,[eax+4*ecx]
+    xor edx,ebx
+    mov [eax+4*ecx],edx
+    jmp r_xor
+end_r_xor:
+    pop edx    
+    pop ecx
+    pop ebx
+    pop eax
+    leave
+    ret    
+            
 ; ............................................................
 print_task1:
     push ebp
@@ -1109,11 +1116,13 @@ check_for_revient:
     push ecx
     push edx
       
-    mov eax,[ebp+8]
-    mov edx,[ebp+12]
+    mov eax,[ebp+8] ; adresa catre imaginea originala
+    mov edx,[ebp+12] ; dimensiunea imaginii
     
     xor ecx,ecx
-    sub edx,10
+    sub edx,10 ; avem nevoie?
+    
+    ; odata ce e gasit 'r', se verifica si celelalte caractere dupa el
 search_rev:
     mov ebx,[eax+4*ecx]
     cmp ebx,'r'
