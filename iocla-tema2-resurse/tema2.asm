@@ -218,7 +218,9 @@ solve_task5:
     
     
 solve_task6:
+    push dword[img]
     call blur
+    add esp,4
     jmp done
 
     ; Free the memory allocated for the image.
@@ -1199,39 +1201,40 @@ xor_img:
 blur:
     push ebp
     mov ebp,esp
-   
     
-    mov eax,[img_width]
-    mov ebx,[img_height]
-    imul eax,ebx
-    mov [img_dim],eax
-    
-    ; compute length of image
-    mov ecx,[img_dim]
-    imul ecx,4
+    mov eax,[ebp+8]
     
     ; allocated memory dynamically for backup
-    push ecx,
+    mov ecx,[img_height]
+    mov edx,[img_width]
+    imul ecx,edx
+    push eax
+    push ecx
+    imul ecx,4
+    push ecx
     call malloc
     add esp,4
     mov [img_backup],eax
+    pop ecx
+    pop eax
     
     ; copied image to backup  
-    push dword[img_dim]
+    ;push dword[img_dim]
+    push ecx
     push dword[img_backup]
-    push dword[img]
+    push eax
     call backup_img
     add esp,12
     
     push dword[img_backup]
-    push dword[img]
+    push eax
     call blur_values
     add esp,8
     
               
     push dword[img_height]
     push dword[img_width]
-    push dword[img]
+    push eax
     call print_image
     add esp,12
     
@@ -1369,7 +1372,7 @@ iter_width:
     pop edx
     pop eax
     ; ========================================
-    
+    ; se updateaza imagine cu valoare obtinuta
     push edx
     push ecx
     push dword[blur_sum]
@@ -1384,7 +1387,7 @@ iter_width:
     jmp iter_width
     
 blur_end:
-    
+    ; se elibereaza copia alocata dinamic
     mov eax,[img_backup]
     push eax
     call free
