@@ -173,18 +173,23 @@ solve_task3:
     
 solve_task4:
     mov eax,[ebp+12]
-    ; the char* message
-    mov ebx,[eax+12]
-    ; the char* byte_id
-    push dword[eax+16]
+    mov ebx,[eax+12] ; mesajul
+    push dword[eax+16] ; byte-id, dar nu in format numeric
     call atoi
-    ; the int byte_id
-    mov ecx,eax
+    add esp,4
+    
+    mov ecx,eax ; byte-id, in format numeric
     push ecx
     push ebx
     push dword[img]
     call lsb_encode
     add esp,12  
+    
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img]
+    call print_image
+    add esp,12    
     jmp done
     
     
@@ -636,8 +641,6 @@ end_morse_conv:
     ret
 
 
-
-
 ; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 lsb_decode:
     push ebp
@@ -685,123 +688,110 @@ lsb_encode:
     push ebp
     mov ebp,esp
     
-    ; the original image
-    mov eax,[ebp+8]
-    ; the message
-    mov ebx,[ebp+12]
-    ; the byte id
-    mov edx,[ebp+16]
+    mov eax,[ebp+8] ; imaginea originala
+    mov ebx,[ebp+12] ; mesajul
+    mov edx,[ebp+16] ; byte id
     
-    ;the start index
-    sub edx,1
+    sub edx,1 ; se obtine indexul pixelului de start 
     mov ecx,edx
     
-    ;save the start index
-    push ecx   
+    push ecx ; se salveaza indexul de start
+    
     xor ecx,ecx
 strlen_lsb:
     add ecx,1
     cmp byte[ebx+ecx],0
     jnz strlen_lsb
-    ; get the length of message
-    mov esi,ecx
-    ; restore the start index    
-    pop ecx
+  
+    mov esi,ecx ; se obtine in ecx dimensiunea mesajului   
+    pop ecx ; se da restore la indexul de start
     
     mov edx,esi
-    imul edx,8
-    add edx,ecx
+    imul edx,8 ; un caracter e un octet
+               ; pentru cate caracter e nevoie de 8 pixeli
+    add edx,ecx ; se adauga offsetul dat de indexul de start
     
-    mov dword[lsb_msg_len],esi ; int
-    mov dword[lsb_start],ecx ; int
-    mov dword[lsb_end],edx ;int
-    mov dword[img],eax ; int*
-    mov dword[lsb_msg],ebx ; char*
+    mov dword[lsb_msg_len],esi ; dimensiunea mesajului
+    mov dword[lsb_start],ecx ; indexul pixelului de start
+    mov dword[lsb_end],edx ; indexul pixelului de end
+    mov dword[lsb_msg],ebx ; mesajul original
+    mov esi,eax ; se salveaza imaginea in esi
     
-    mov ecx,[lsb_start] ; 1 - does not reset
-    xor edx,edx
-    mov esi, [lsb_msg_len]
+    mov ecx,[lsb_start]
+    xor edx,edx ; edx este iteratorul de caractere din mesaj
     
 lsb_chars:
-    cmp edx,esi
+    cmp edx,[lsb_msg_len] ; se parcurge fiecare caracter din mesaj
     jz lsb_chars_end
     
     xor eax,eax
     mov ebx,[lsb_msg]
     mov al,byte[ebx+edx]
     push eax
-    call get_binary
+    call get_mirror_binary
     add esp,4 ; eax are valoarea binara in oglinda
     
-    push edx ; save iter for reuse
+    push edx ; se salveaza edx pe stiva
     
-    mov ebx,[img]
-    xor edx,edx
+    xor edx,edx ; se itereaza cu edx prin bitii octetului rezultat
 lsb_bits:
     cmp edx,8
     jz end_bits
     test al,1
     jz lsb_bits_even
     jmp lsb_bits_odd
-lsb_bits_even: ; put 0
-    mov edi,[ebx+4*ecx]
+lsb_bits_even: ; se pune 0
+    mov edi,[esi+4*ecx]
     test edi,1
     jz skip_put_0
     sub edi,1
-    mov [ebx+4*ecx],edi
+    mov [esi+4*ecx],edi
 skip_put_0:    
     add ecx,1
     add edx,1
     shr eax,1
     jmp lsb_bits
-lsb_bits_odd: ; put 1
-    mov edi,[ebx+4*ecx]
+lsb_bits_odd: ; se pune 1
+    mov edi,[esi+4*ecx]
     test edi,1
     jnz skip_put_1
     add edi,1
-    mov [ebx+4*ecx],edi   
+    mov [esi+4*ecx],edi   
 skip_put_1:
     add ecx,1
     add edx,1
     shr eax,1
     jmp lsb_bits
-end_bits:
     
-    pop edx ; restore the old iter
+end_bits: 
+    pop edx ; se restaureaza vechea functiei a iteratorului edx
     add edx,1
-    jmp lsb_chars     
+    jmp lsb_chars    
+     
 lsb_chars_end:
     
     
-    ; we need to encrypt the 0 char as well
-    xor edx,edx
-    mov ebx,[img]
+    ; se cripteaza si terminatorul de sir pe 8 pixeli
+    xor edx,edx 
 lsb_terminator:
     cmp edx,8
     jz lsb_terminator_end   
-    mov edi,[ebx+4*ecx]
+    mov edi,[esi+4*ecx]
     test edi,1
     jz skip_terminator
     sub edi,1
-    mov [ebx+4*ecx],edi
+    mov [esi+4*ecx],edi
 skip_terminator:    
     add ecx,1
     add edx,1
-    jmp lsb_terminator   
-lsb_terminator_end:  
-
-          
-    push dword[img_height]
-    push dword[img_width]
-    push dword[img]
-    call print_image
-    add esp,12    
-      
+    jmp lsb_terminator
+     
+lsb_terminator_end:       
     leave
     ret
   
-; ====================================================
-get_binary:
+; ......................................................
+get_mirror_binary:
     push ebp
     mov ebp,esp
     
