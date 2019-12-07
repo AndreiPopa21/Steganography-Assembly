@@ -112,13 +112,15 @@ solve_task1:
     xor ecx,ecx
     xor edx,edx
     
+    ; in eax se afla salvate atat cheia, cat si linia
+    ; fiecare se extrage din eax si se pune ori in cate un alt registru
     mov dx,ax
     push edx
     shr eax,16
     mov cx,ax
     push ecx
     
-    push dword[img_backup]
+    push dword[img]
     call print_task1
     add esp,12
     jmp done
@@ -138,13 +140,13 @@ solve_task2:
     mov cx,ax
     push ecx
     
-    push dword[img_backup]
+    push dword[img]
     call encrypt_msg_task2
     add esp,12    
       
     push dword[img_height]
     push dword[img_width]
-    push dword[img_backup]
+    push dword[img]
     call print_image
     add esp,12   
     jmp done
@@ -974,32 +976,32 @@ encrypt_reply:
 bruteforce_singlebyte_xor:
     push ebp
     mov ebp,esp
-    ; get the image
-    mov eax,[ebp+8]
+    
+    mov eax,[ebp+8] ; adresa catre imaginea originala
+    
+    ; se calculeaza dimensiunea imaginii
     mov ecx,[img_height]
     mov edx,[img_width]
     imul ecx,edx
     
-    ; save the img dimension
-    push ecx
-    ; save the original img
-    push eax
+    push ecx ; se salveaza pe stiva dimensiunea imaginii
+    push eax ; se salveaza pe stiva imaginea originala
+    
+    ; se realizeaza o copie dinamica a imaginii
+    ; de fiecare data, se incearca o cheie si se altereaza 
+    ; imaginea originala. copia se utilizeaza pentru a o restaura
     xor ebx,ebx
     mov ebx,ecx
     imul ebx,4
-    
     push ebx
     call malloc
-    ; get backup location
-    mov [img_backup],eax
+    mov [img_backup],eax ; se salveaza copia in variabila img_backup
     add esp,4
-    ; restore original img
-    pop eax
-    ; restore the img dimension
-    pop ecx   
     
-    ; start with key from 0
-    xor esi,esi   
+    pop eax ; se restaureaza imaginea originala
+    pop ecx  ; se restaureaza dimenisunea imaginii
+    
+    xor esi,esi ; se incepe cu cheia de valoare 0
 brute:
     
     ; with every key, we make a new copy  
@@ -1034,9 +1036,10 @@ brute:
 found_right_key:
      mov [brute_line],eax
      mov [brute_key],esi
-     mov ebx,[img_width]
-     imul eax,ebx
+     
      mov edx,[img_backup]
+     mov [img],edx
+     
      
      xor eax,eax
      xor ecx,ecx
@@ -1050,7 +1053,8 @@ found_right_key:
        
     leave
     ret
-; ====================================================
+    
+; ............................................................
 print_task1:
     push ebp
     mov ebp,esp
@@ -1095,7 +1099,8 @@ end_print_mesg_task1:
     
     leave
     ret
-; ====================================================
+
+; ...........................................................
 check_for_revient:
     push ebp
     mov ebp,esp
@@ -1150,22 +1155,20 @@ end_check_for_revient:
     leave
     ret
 
-; ====================================================
+; ........................................................
 xor_img_with_key:
     push ebp
     mov ebp,esp
     
+    ; se salveaza vechii registrii pe stiva
     push eax
     push ebx
     push ecx
     push edx
         
-    ; first arg - the image address
-    mov eax,[ebp+8]
-    ; second arg - the key
-    mov ebx,[ebp+12]
-    ; third arg - the img dimension
-    mov edx,[ebp+16]
+    mov eax,[ebp+8] ; adresa catre imaginea originala
+    mov ebx,[ebp+12] ; cheia cu care se decripteaza
+    mov edx,[ebp+16] ; dimensiunea imaginii
   
     xor ecx,ecx
 xor_img:
@@ -1179,7 +1182,8 @@ xor_img:
     pop edx
     cmp ecx,edx
     jnz xor_img
-
+    
+    ; se restaureaza vechii registrii de pe stiva
     pop edx
     pop ecx
     pop ebx
@@ -1230,17 +1234,15 @@ backup_img:
     push ebp
     mov ebp,esp
     
+    ; se salv
     push eax
     push ebx
     push ecx
     push edx
    
-    ; adresa catre vectorul original
-    mov eax,[ebp+8]
-    ; adresa catre vectorul backup
-    mov ebx,[ebp+12]
-    ; dimensiunea vectorul
-    mov ecx,[ebp+16]
+    mov eax,[ebp+8] ; adresa catre imaginea backup
+    mov ebx,[ebp+12] ; adresa catre imaginea destinatie
+    mov ecx,[ebp+16] ; dimensiunea vectorul
     
     
 back_proc:
@@ -1257,6 +1259,7 @@ back_proc:
     
     leave
     ret
+    
 ; ================================================   
 blur_values:
     push ebp
