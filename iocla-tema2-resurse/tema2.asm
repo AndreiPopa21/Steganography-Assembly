@@ -134,13 +134,15 @@ solve_task2:
     xor ecx,ecx
     xor edx,edx
     
+    ; se extrage din eax cheia si linia si se pun in cate un registru
     mov dx,ax
-    push edx
     shr eax,16
     mov cx,ax
-    push ecx
     
-    push dword[img]
+    
+    push edx ; linia
+    push ecx ; cheia
+    push dword[img] ; adresa catre imaginea decriptata
     call encrypt_msg_task2
     add esp,12    
       
@@ -845,7 +847,7 @@ encrypt_msg_task2:
     push ebp
     mov ebp,esp
     
-    mov eax,[ebp+8] ; mesajul decriptat
+    mov eax,[ebp+8] ; adresa catre imaginea decriptata
     mov ebx,[ebp+12] ; cheia veche 
     mov edx,[ebp+16] ; linia veche
     
@@ -994,6 +996,8 @@ brute:
     add esp,12   
     
     ; se verifica daca prin decriptare, s-a obtinut revient
+    ; se intoarce valoarea liniei daca e gasit
+    ; altfel se intoarce -1
     push ecx
     push dword[img]
     call check_for_revient
@@ -1066,23 +1070,15 @@ print_task1:
     push ebp
     mov ebp,esp
     
-    push eax
-    push ebx
-    push ecx
-    push edx
-    
-    ; the xor-ed image
-    mov eax,[ebp+8]
-    ; the key
-    mov ebx,[ebp+12]
-    ; the original line
-    mov edx,[ebp+16]
+    mov eax,[ebp+8] ; adresa catre imaginea decriptata
+    mov ebx,[ebp+12] ; cheia cu care s-a decriptat
+    mov edx,[ebp+16] ; linia mesajului
       
+    ; se salveaza cheia pt reutilizarea registrului ebx
     push ebx
-       
+    ; se afiseaza mesajul secret
     mov ecx,[img_width]
-    imul ecx,edx
-    
+    imul ecx,edx    
 print_mesg_task1:
     mov ebx,[eax+4*ecx]
     cmp ebx,0
@@ -1092,17 +1088,13 @@ print_mesg_task1:
     jmp print_mesg_task1
     
 end_print_mesg_task1:
+    ; odata printat mesajul, se restaureaza cheia de pe stiva
     pop ebx
     NEWLINE
     PRINT_UDEC 4,ebx
     NEWLINE
     PRINT_UDEC 4,edx
     NEWLINE
-    
-    pop edx
-    pop ecx
-    pop ebx
-    pop eax
     
     leave
     ret
@@ -1120,7 +1112,6 @@ check_for_revient:
     mov edx,[ebp+12] ; dimensiunea imaginii
     
     xor ecx,ecx
-    sub edx,10 ; avem nevoie?
     
     ; odata ce e gasit 'r', se verifica si celelalte caractere dupa el
 search_rev:
@@ -1145,7 +1136,9 @@ search_rev:
     mov ebx,[eax+4*ecx+24]
     cmp ebx,'t'
     jnz not_revient
-    ; after revient is found  
+    
+    ; daca toate if-urile anterioare trec, s-a gasit revient
+    ; in acest caz, se pune in eax valoarea liniei  
     xor edx,edx
     mov eax,ecx
     mov ebx,[img_width]
