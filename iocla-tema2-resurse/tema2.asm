@@ -1290,9 +1290,11 @@ iter_height:
     jz blur_end
     mov edx,[img_width]
     sub edx,2
-iter_width:   
+iter_width:
+    ; la fiecare iteratie, se reseteaza suma la 0   
     mov dword[blur_sum],0   
     ; =======================================
+    ; se gaseste si se aduna valoarea pixelului curent
     push eax
     
     push edx ; indexul coloanei curent
@@ -1304,61 +1306,59 @@ iter_width:
     
     pop eax
     ; =======================================
+    ; se gaseste si se aduna valorea pixelului stang
+    push eax
+    
     push edx
     push ecx
     push ebx
-    push eax
-    
     call get_left
     add [blur_sum],eax
+    add esp,12
     
     pop eax
-    pop ebx
-    pop ecx
-    pop edx
     ; =======================================
-    push edx
-    push ecx
-    push ebx
+    ; se gaseste si se aduna valoarea pixelului drept
     push eax
     
+    push edx
+    push ecx
+    push ebx 
     call get_right
     add [blur_sum],eax
+    add esp,12
     
     pop eax
-    pop ebx
-    pop ecx
-    pop edx
     ; ========================================
-    push edx
-    push ecx
-    push ebx
+    ; se gaseste si se aduna valoarea pixelului top
     push eax
     
+    push edx
+    push ecx
+    push ebx    
     call get_top
     add [blur_sum],eax
+    add esp,12
     
     pop eax
-    pop ebx
-    pop ecx
-    pop edx
     ; ========================================
+    ; se gaseste si se aduna valoarea pixelului bottom
+    push eax
+    
     push edx
     push ecx
     push ebx
-    push eax
-    
     call get_bottom
     add [blur_sum],eax
+    add esp,12
     
     pop eax
-    pop ebx
-    pop ecx
-    pop edx
     ; ========================================   
+    ; se imparte la 5 pentru a se obtine valoarea pixelului blurat
     push eax
     push edx
     push ecx
+    
     mov eax,[blur_sum]
     mov ecx,5
     xor edx,edx
@@ -1369,22 +1369,15 @@ iter_width:
     pop edx
     pop eax
     ; ========================================
+    
     push edx
     push ecx
-    push ebx
+    push dword[blur_sum]
     push eax
-    
-    push edx
-    push ecx
-   
     call blur_current_value
-    add esp,8
-    
-    pop eax
-    pop ebx
-    pop ecx
-    pop edx
-    
+    add esp,16
+
+ 
     sub edx,1  
     cmp edx,0
     jz iter_height
@@ -1416,18 +1409,11 @@ get_current:
     mov ecx,[ebp+12]
     mov edx,[ebp+16]
     
-    push ebx
-    
+        
     mov eax,[img_width]
-    imul eax,4
     imul eax,ecx 
-    mov ebx,edx
-    imul ebx,4
-    add eax,ebx
-    mov ecx,eax
-    
-    pop ebx
-    mov eax,[ebx+ecx]
+    add eax,edx
+    mov eax,[ebx+4*eax]
     
     pop edx
     pop ecx
@@ -1440,24 +1426,24 @@ get_left:
     push ebp
     mov ebp,esp
     
-    mov ebx,[ebp+12]
-    mov ecx,[ebp+16]
-    mov edx,[ebp+20]
-    
     push ebx
+    push ecx
+    push edx
     
+    mov ebx,[ebp+8]
+    mov ecx,[ebp+12]
+    mov edx,[ebp+16]
+    
+         
     mov eax,[img_width]
-    imul eax,4
     imul eax,ecx 
-    mov ebx,edx
-    imul ebx,4
-    add eax,ebx
-    mov ecx,eax
-    sub ecx,4
-    
-    pop ebx
-    mov eax,[ebx+ecx]
+    add eax,edx
+    mov eax,[ebx+4*eax-4]
      
+    pop edx
+    pop ecx
+    pop ebx
+    
     leave
     ret
 ; ====================================================
@@ -1465,24 +1451,23 @@ get_right:
     push ebp
     mov ebp,esp
     
-    mov ebx,[ebp+12]
-    mov ecx,[ebp+16]
-    mov edx,[ebp+20]
-    
     push ebx
+    push ecx
+    push edx
     
+    mov ebx,[ebp+8]
+    mov ecx,[ebp+12]
+    mov edx,[ebp+16]
+    
+        
     mov eax,[img_width]
-    imul eax,4
     imul eax,ecx 
-    mov ebx,edx
-    imul ebx,4
-    add eax,ebx
-    mov ecx,eax
-    add ecx,4
-    
-    pop ebx
-    mov eax,[ebx+ecx]
+    add eax,edx
+    mov eax,[ebx+4*eax+4]
      
+    pop edx
+    pop ecx
+    pop ebx
     leave
     ret
 ; ===================================================
@@ -1490,24 +1475,23 @@ get_top:
     push ebp
     mov ebp,esp
     
-    mov ebx,[ebp+12]
-    mov ecx,[ebp+16]
-    mov edx,[ebp+20]
-    
     push ebx
+    push ecx
+    push edx
+    
+    mov ebx,[ebp+8]
+    mov ecx,[ebp+12]
+    mov edx,[ebp+16]
     
     mov eax,[img_width]
     sub ecx,1
-    imul eax,4
     imul eax,ecx 
-    mov ebx,edx
-    imul ebx,4
-    add eax,ebx
-    mov ecx,eax
+    add eax,edx
+    mov eax,[ebx+4*eax]
     
+    pop edx
+    pop ecx
     pop ebx
-    mov eax,[ebx+ecx]
-    
     leave
     ret
 ; ====================================================
@@ -1515,45 +1499,56 @@ get_bottom:
     push ebp
     mov ebp,esp
     
-    mov ebx,[ebp+12]
-    mov ecx,[ebp+16]
-    mov edx,[ebp+20]
-    
     push ebx
+    push ecx
+    push edx
     
+    mov ebx,[ebp+8]
+    mov ecx,[ebp+12]
+    mov edx,[ebp+16]
+  
     mov eax,[img_width]
     add ecx,1
-    imul eax,4
     imul eax,ecx 
-    mov ebx,edx
-    imul ebx,4
-    add eax,ebx
-    mov ecx,eax
+    add eax,edx
+    mov eax,[ebx+4*eax]
     
+    pop edx
+    pop ecx
     pop ebx
-    mov eax,[ebx+ecx]
-     
+    
     leave
     ret
 ; ====================================================
 blur_current_value:
     push ebp
     mov ebp,esp
-
-    mov ecx,[ebp+8]
-    mov edx,[ebp+12]
     
-    mov eax,[img_width]
-    imul eax,4
-    imul eax,ecx 
-    mov ebx,edx
-    imul ebx,4
-    add eax,ebx
-    mov ecx,eax
+    ; se salveaza vechii registrii pe stiva
+    push eax
+    push ebx
+    push ecx
+    push edx
+    push esi
     
-    mov eax,[img]
-    mov edx,[blur_sum]
-    mov [eax+ecx],edx
+    mov eax,[ebp+8] ; adresa catre imaginea destinatie
+    mov ebx,[ebp+12] ; valoarea blurata 
+    mov ecx,[ebp+16] ; indexul de linie
+    mov edx,[ebp+20] ; indexul de coloana
+    
+    ; se calculeaza pozitia la care trebuie pusa valoarea noua
+    mov esi, [img_width]
+    imul esi,ecx
+    add esi,edx
+    ; se blureaza pixelul din imaginea originala
+    mov [eax+4*esi],ebx
+    
+    ; se restaureaza vechii registrii de pe stiva
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    pop eax
     
     leave
     ret
