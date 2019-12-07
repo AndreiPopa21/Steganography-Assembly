@@ -141,6 +141,12 @@ solve_task2:
     push dword[img_backup]
     call encrypt_msg_task2
     add esp,12    
+      
+    push dword[img_height]
+    push dword[img_width]
+    push dword[img_backup]
+    call print_image
+    add esp,12   
     jmp done
 
 
@@ -795,11 +801,12 @@ get_mirror_binary:
     push ebp
     mov ebp,esp
     
+    ; se salveaza registrii pe stiva
     push ebx
     push ecx
     push edx
     
-    mov ebx,[ebp+8] ; the ASCII char
+    mov ebx,[ebp+8] ; caracterul ASCII
        
     xor eax,eax
     xor ecx,ecx
@@ -808,53 +815,43 @@ convert_bin:
     jz conv_even
     jmp conv_odd
 conv_even:
-    ;PRINT_STRING "0 "
     shl eax,1
     shr ebx,1
     add ecx,1
-    ;NEWLINE
     cmp ecx,8
-    jz fin_convert
+    jz end_mirror_binary
     jmp convert_bin
 conv_odd:
-    ;PRINT_STRING "1 "
-    ;NEWLINE
     shl eax,1
     add eax,1
     shr ebx,1
     add ecx,1
     cmp ecx,8
-    jz fin_convert
+    jz end_mirror_binary
     jmp convert_bin
     
-fin_convert:
-    
+end_mirror_binary:    
+    ; se restaureaza vechii registrii
     pop edx
     pop ecx
-    pop ebx
-    
+    pop ebx    
     leave
     ret
 
-; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+; +++++++++++++++++++++++++++++++++++++++++++++++++++++
 encrypt_msg_task2:
     push ebp
     mov ebp,esp
     
-    ; the decrypted image
-    mov eax,[ebp+8]
-    ; the old key
-    mov ebx,[ebp+12]
-    ; the old line
-    mov edx,[ebp+16]
+    mov eax,[ebp+8] ; mesajul decriptat
+    mov ebx,[ebp+12] ; cheia veche 
+    mov edx,[ebp+16] ; linia veche
     
-    
-    ; the new line
-    add edx,1
-    ; save the new line
-    push edx
+    add edx,1 ; raspunsul e criptat pe urmatoarea linie
+    push edx ; se salveaza noua linie si mesajul pe stiva
     push eax
     
+    ; se obtine in ebx cheia noua de criptare
     imul ebx,2
     add ebx,3
     xor edx,edx
@@ -862,13 +859,10 @@ encrypt_msg_task2:
     mov ecx,5
     div ecx
     sub eax,4
-    ; store the new key
     mov ebx,eax
     
-    ; restore the img address
-    pop eax
-    ; restore the new line
-    pop edx
+    pop eax ; se restaureaza adresa imaginii
+    pop edx ; se restaureaza vechea linie
     
     
     push edx
@@ -878,34 +872,27 @@ encrypt_msg_task2:
     
     push ebx
     push eax
-    call encrypt_new_key
-    add esp,8
-    
-    push dword[img_height]
-    push dword[img_width]
-    push dword[img_backup]
-    call print_image
-    add esp,12    
+    call encrypt_with_new_key
+    add esp,8 
     
     leave
     ret
 
 ; =====================================================
-encrypt_new_key:
+encrypt_with_new_key:
     push ebp
     mov ebp,esp
     
+    ; se salveaza registrii pe stiva
     push eax
     push ebx
     push ecx
     push edx
     
+    mov eax,[ebp+8] ; poza originala decriptata
+    mov ebx,[ebp+12] ; cheia noua de criptare
     
-    ; the original msg
-    mov eax,[ebp+8]
-    ; the new key
-    mov ebx,[ebp+12]
-    
+    ; se calculeaza dimensiunea imaginii
     mov ecx,[img_height]
     mov edx,[img_width]
     imul edx,ecx
@@ -913,20 +900,21 @@ encrypt_new_key:
     xor ecx,ecx
 encrypt:
     mov esi,[eax+4*ecx]
-    xor esi,ebx
+    xor esi,ebx ; se xoreaza fiecare pixel dupa noua cheie
     mov [eax+4*ecx],esi
     add ecx,1
     cmp ecx,edx
     jnz encrypt
        
+    ; se restaureaza vechii registrii de pe stiva
     pop edx
     pop ecx
     pop ebx
-    pop eax
-    
+    pop eax    
     leave
     ret
-; ====================================================
+    
+; ...........................................................
 encrypt_reply:
     push ebp
     mov ebp,esp
@@ -935,12 +923,11 @@ encrypt_reply:
     push ebx
     push ecx
     push edx
+     
+    mov eax,[ebp+8] ; imaginea originala decriptata
+    mov edx,[ebp+12] ; linia noua
     
-    ; the original img
-    mov eax,[ebp+8]
-    ; the new line
-    mov edx,[ebp+12]
-    
+    ; se calculeaza in functie de noua linie, pixelul de start
     mov ecx,edx
     mov ebx,[img_width]
     imul ecx,ebx
@@ -974,16 +961,16 @@ encrypt_reply:
     mov dword[eax+4*ecx+104],'.'
     mov dword[eax+4*ecx+108],0    
     
+    ; se restaureaza vechii registrii
     pop edx
     pop ecx
     pop ebx
-    pop eax
-    
+    pop eax    
     leave
     ret
 
 
-; VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 bruteforce_singlebyte_xor:
     push ebp
     mov ebp,esp
