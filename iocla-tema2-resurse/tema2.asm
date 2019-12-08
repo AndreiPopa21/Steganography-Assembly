@@ -407,6 +407,8 @@ search_rev:
     div ebx
     jmp end_check_for_revient
 not_revient:
+    ; daca s-a ajuns aici, inseamna ca nu s-a gasit revient
+    ; se intoarce -1 din functie 
     add ecx,1
     cmp ecx,edx
     jnz search_rev
@@ -434,6 +436,7 @@ xor_img_with_key:
     mov ebx,[ebp+12] ; cheia cu care se decripteaza
     mov edx,[ebp+16] ; dimensiunea imaginii
   
+    ; se aplica cheia pe imagine
     xor ecx,ecx
 xor_img:
     push edx
@@ -496,7 +499,7 @@ encrypt_msg_task2:
     leave
     ret
 
-; =====================================================
+; ............................................................
 encrypt_with_new_key:
     push ebp
     mov ebp,esp
@@ -550,6 +553,7 @@ encrypt_reply:
     mov ebx,[img_width]
     imul ecx,ebx
     
+    ; odata gasit pixelul de start, se scrie mesajul de la acel punct
     mov dword[eax+4*ecx],'C'
     mov dword[eax+4*ecx+4],39
     mov dword[eax+4*ecx+8],'e'
@@ -637,6 +641,7 @@ morse_encode_one_char:
     mov ebx,[ebp+8] ; the image
     mov eax,[ebp+12] ; the char to be encoded
     
+    ; se identifica, mai intai, ce caracter primeste functia
     cmp al,'A'
     jz a_char
     cmp al,'B'
@@ -1006,49 +1011,6 @@ end_morse_conv:
     leave
     ret
 
-
-; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-lsb_decode:
-    push ebp
-    mov ebp,esp
-    
-    mov eax,[ebp+8] ; imaginea originala
-    mov edx,[ebp+12] ; byte-id
-    
-    sub edx,1 ; se obtine indexul corect de start
-    
-    ; in continuare, se construiesc caracterele bit cu bit
-    ; in ebx se va construi codul ASCII al fiecarui char
-    mov ecx,edx ; se reseteaza iteratorul 
-lsb_decode_chars:
-    xor ebx,ebx 
-    xor edx,edx
-build_ascii:
-    cmp edx,8 ; se parcurg grupuri de cate 8 pixeli pentru un caracter
-    jz end_build_ascii
-    shl ebx,1
-    mov edi,[eax+4*ecx]
-    add ecx,1
-    test edi,1 ; se foloseste o masca de biti pentru a vedea ultimul bit
-    jnz build_put_1
-    jmp build_put_0
-build_put_1:
-    add ebx,1
-build_put_0: 
-    add edx,1   
-    jmp build_ascii 
-end_build_ascii:
-    test ebx,ebx
-    jz end_lsb_decode_chars
-    ; in ebx exista caracterul construit bit cu bit
-    PRINT_CHAR ebx ; se afiseaza in stdout
-    jmp lsb_decode_chars
-
-end_lsb_decode_chars:
-    NEWLINE
-    leave
-    ret    
-            
 ; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 lsb_encode:
     push ebp
@@ -1099,9 +1061,10 @@ lsb_chars:
     
     push edx ; se salveaza edx pe stiva
     
+    ; se ia numarul rezultat si se pun bitii in ordine pe cate un pixel
     xor edx,edx ; se itereaza cu edx prin bitii octetului rezultat
 lsb_bits:
-    cmp edx,8
+    cmp edx,8 ; se stie ca avem de a face cu un octet
     jz end_bits
     test al,1
     jz lsb_bits_even
@@ -1135,8 +1098,7 @@ end_bits:
     jmp lsb_chars    
      
 lsb_chars_end:
-    
-    
+       
     ; se cripteaza si terminatorul de sir pe 8 pixeli
     xor edx,edx 
 lsb_terminator:
@@ -1167,7 +1129,13 @@ get_mirror_binary:
     push edx
     
     mov ebx,[ebp+8] ; caracterul ASCII
-       
+    
+    ; caracterul este pe 8 biti si are o valoare anume binara
+    ; bitii caracterului sunt luati unu cate unul incepand de LSB
+    ; si prin operatii de shiftari, se construieste un alt numar
+    ; care are bitii numarului initial, dar in ordine inversa
+    ; ex. daca caracterul original era 0b01010111 acum e 0b11101010
+    ; numarul rezultat actioneaza ca o stiva de biti
     xor eax,eax
     xor ecx,ecx
 convert_bin:
@@ -1197,6 +1165,50 @@ end_mirror_binary:
     pop ebx    
     leave
     ret
+
+
+; ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+lsb_decode:
+    push ebp
+    mov ebp,esp
+    
+    mov eax,[ebp+8] ; imaginea originala
+    mov edx,[ebp+12] ; byte-id
+    
+    sub edx,1 ; se obtine indexul corect de start
+    
+    ; in continuare, se construiesc caracterele bit cu bit
+    ; in ebx se va construi codul ASCII al fiecarui char
+    mov ecx,edx ; se reseteaza iteratorul 
+lsb_decode_chars:
+    xor ebx,ebx 
+    xor edx,edx
+build_ascii:
+    cmp edx,8 ; se parcurg grupuri de cate 8 pixeli pentru un caracter
+    jz end_build_ascii
+    shl ebx,1
+    mov edi,[eax+4*ecx]
+    add ecx,1
+    test edi,1 ; se foloseste o masca de biti pentru a vedea ultimul bit
+    jnz build_put_1
+    jmp build_put_0
+build_put_1:
+    add ebx,1
+build_put_0: 
+    add edx,1   
+    jmp build_ascii 
+end_build_ascii:
+    test ebx,ebx
+    jz end_lsb_decode_chars
+    ; in ebx exista caracterul construit bit cu bit
+    PRINT_CHAR ebx ; se afiseaza in stdout
+    jmp lsb_decode_chars
+
+end_lsb_decode_chars:
+    NEWLINE
+    leave
+    ret    
+            
 
 ; +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -1411,9 +1423,9 @@ get_current:
     push ecx
     push edx
     
-    mov ebx,[ebp+8]
-    mov ecx,[ebp+12]
-    mov edx,[ebp+16]
+    mov ebx,[ebp+8] ; adresa imaginii originale
+    mov ecx,[ebp+12] ; linia curenta
+    mov edx,[ebp+16] ; coloana curenta
     
         
     mov eax,[img_width]
@@ -1435,9 +1447,9 @@ get_left:
     push ebp
     mov ebp,esp
     
-    push ebx
-    push ecx
-    push edx
+    push ebx ; adresa imaginii originale
+    push ecx ; linia curenta
+    push edx ; coloana curenta
     
     mov ebx,[ebp+8]
     mov ecx,[ebp+12]
@@ -1467,9 +1479,9 @@ get_right:
     push ecx
     push edx
     
-    mov ebx,[ebp+8]
-    mov ecx,[ebp+12]
-    mov edx,[ebp+16]
+    mov ebx,[ebp+8] ; adresa imaginii originale
+    mov ecx,[ebp+12] ; linia curenta
+    mov edx,[ebp+16] ; coloana curenta
     
         
     mov eax,[img_width]
@@ -1494,9 +1506,9 @@ get_top:
     push ecx
     push edx
     
-    mov ebx,[ebp+8]
-    mov ecx,[ebp+12]
-    mov edx,[ebp+16]
+    mov ebx,[ebp+8] ; adresa imagini originale
+    mov ecx,[ebp+12] ; linia curenta
+    mov edx,[ebp+16] ; coloana curenta
     
     mov eax,[img_width]
     sub ecx,1
@@ -1521,9 +1533,9 @@ get_bottom:
     push ecx
     push edx
     
-    mov ebx,[ebp+8]
-    mov ecx,[ebp+12]
-    mov edx,[ebp+16]
+    mov ebx,[ebp+8] ; adresa imaginii originale
+    mov ecx,[ebp+12] ; linia curenta
+    mov edx,[ebp+16] ; coloana curenta
   
     mov eax,[img_width]
     add ecx,1
