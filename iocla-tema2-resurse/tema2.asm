@@ -716,6 +716,8 @@ morse_encode_one_char:
     jz nine_char
     cmp al,'0'
     jz zero_char
+    cmp al,32
+    jz space_char
     
     ; se scrie pentru fiecare litera codul corespunzator in . sau -
     ; se concateneaza la final mereu caracterul SPACE
@@ -1005,6 +1007,11 @@ zero_char:
     mov dword[ebx+4*edx+16],45
     mov dword[ebx+4*edx+20],32
     add edx,6
+    jmp end_morse_conv
+space_char:
+    mov dword[ebx+4*edx],124
+    mov dword[ebx+4*edx+4],32
+    add edx,2
  
 end_morse_conv:   
     pop ebx
@@ -1025,6 +1032,7 @@ lsb_encode:
     
     push ecx ; se salveaza indexul de start
     
+    ; calculez lunginea mesajul care trebuie criptat
     xor ecx,ecx
 strlen_lsb:
     add ecx,1

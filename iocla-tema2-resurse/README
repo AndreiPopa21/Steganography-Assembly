@@ -1,0 +1,36 @@
+Titlul: Tema2 - Stegano
+Nume student: Popa Stefan-Andrei
+Grupa: 323 CC
+
+-> Introducere
+Tema a fost rezolvata cu succes, toate taskurile fiind completate. La nivel de algoritmi, tema nu a prezentat neaparat o dificultate, provocarea constand in implementarea functiilor propriu-zise. Durata rezolvarii temei poate fi apreciata la 20-24 de ore. In rezolvarea mea, am utilizat multe functii auxiliare si le-am impartit pe blocuri bine delimitate. Am folosit notatia +++++++ pentru a delimita functiile unui task de cele ale altuia, si notatia ...... pentru a delimita functiile din cadrul aceluiasi task. Antetele functiilor principale au fost respectate exact ca in enunt, iar printarile in stdout de la final au fost apelate fie in functiile mari, fie in afara lor. In acest README voi explica in mare ideea algoritmilor utilizati in rezolvare. Pentru explicatii mai detaliate, am pus comentarii in cod in cadrul fiecarei functii.
+
+-> Rezolvare
+
+-> Task 1
+La acest task, am iterat cu cheia de la 0 la 255 si am aplicat operatia XOR pe imagine de fiecare data. Odata ce am XOR-at imaginea in functia xor_img_with_ley(int* img, int cheie, int dimens_img) , apelez functia check_for_revient(int* img, int dimens_img) si caut daca exista undeva cuvantul "revient". In caz afirmativ, adica daca am gasit cuvantul, returnez din functie numarul liniei la care exista. Altfel, cheia nu e buna si returnez -1. De fiecare data, cand am XOR-at imaginea cu cheia necorespunzatoare, am apelat reverse_xor(int* img, int cheie, int dimens_img) ca sa inversez operatia de XOR si ca sa ajung la imaginea criptata originala. Procesul se repeta pana cand cheia corecta e gasita. Atunci, ies din operatia de bruteforce si stochez atata linia mesajului, cat si cheia in registrul EAX. Cheia e pusa in cei mai semnificativi 16 biti ai registrului, pe cand linia in cei mai nesemnificativi 16 biti. Utilizez operatia de shift-left ca sa imi stochez valorile in EAX.
+Functia principala bruteforce_singlebyte_xor devine astefel reutilizabila si pentru cel de-al doilea task. La finalul taskului 1, iau din EAX cheia si linia si printez dintr-o alta functie rezultatul.
+
+-> Task 2
+La taskul 2, apelez functia principala de la taskul 1 si primesc in functia mare de aici imaginea decriptata, cheia si linia. Mai intai, calculez noua cheia pe baza celei vechi. Dupa aceea, scriu pe urmatoarea linie mesajul si XOR-ez imaginea cu noua cheie calculata. Functiile auxiliare sunt encrypt_reply(int* img, int linia_noua) pentru a scrie raspunsul in imagine, si encrypt_with_new_key(int* img, int cheie_noua) pentru a aplica XOR cu noua cheie pe imaginea decriptata.
+
+-> Task 3
+In functia principala, primesc imaginea, mesajul si offsetul de la care scriu mesajul. Aici parcurg mesajul primit caracter cu caracter si apelez morse_encode_one_char(int* img, char* c) pentru fiecare in parte. In cadrul acestei functii, identific care e caracterul meu printr-o secventa mare de if-uri,iar odata ce l-am gasit, il scriu direct in imagine. Conventia este ca mereu concatez SPACE la finalul unui caracter, si de asemenea, am un registru iterator cu care tin permanent evidenta offsetului de la care trebuie sa scriu un anume caracter. La final, dupa ce am scris fiecare caracter, sterg ultimul SPACE din mesaj si il inlocuiesc cu caracterul 0, terminator de sir.
+
+-> Task 4
+In functia mare lsb_encode, analizez lungimea mesajului si ma folosesc de mai multe variabile din .bss ca sa stochez diferite informatii. Ca sa pot sa scriu fiecare bit al unui caracter incepand de la LSB, am nevoie sa imi creez ca un fel de stiva in care se pot pune bitii de la coada la cap, si apoi de unde sa ii extrag invers. Pentru asta, am functia get_mirror_binary(char* c) care imi construieste un nou numar avand ordinea bitilor inversa fata de caracterul primit ca argument. In instructiunile mele, ma folosesc mai ales de operatii de shift-left si shift-right ca sa pot sa deconstruiesc un numar si ca sa pot construi altul. Apoi, in functia principala, avand un registru iterator, pun bitii pe pozitiile lor corespunzatoare. Ca sa vad mereu care e LSB-ul unui numar, folosesc o masca de biti 0x00000001 cu test.
+
+-> Task 5
+La acest task, practic fac o parcurgere pixel cu pixel si imi construiesc pe grupuri de cate 8 cate o valoare ASCII corespunzatoare unui caracter. Printez in stdout fiecare caracter pe parcurs.
+
+-> Task 6
+La acest task, aloc dinamic cu malloc o copie a imaginii originale. In functia mea, pe parcurs ce blurez fiecare pixel, ajung sa stric imaginea originala si am nevoie de o copie de referinta din care sa imi iau valorile cu care sa calculez mediile. Algoritmul consta in parcurgerea pixel cu pixel a imaginii. Am 5 functii care primesc, fiecare, adresa catre imaginea nealterata, si doi indexi, unu de coloana, unul de linie. Fiecare dintre aceste functii imi cauta, in functie de un pixel de referinta, valorile vecinilor sai, iar la final, intr-o variabila blur_sum din .bss, am suma lor totala. Impart la 5 si scriu media in pixelul corespunzator din imaginea destinatie. Dupa ce am terminat de format imaginea, eliberez cu free din memorie copia alocata si afisez imaginea rezultata in stdout.
+
+
+Mereu in functii, pun pe stiva registrii pe care ii folosesc si la final, ii iau tot de pe aceasta cu pop. Am facut uz in functii si de alte variabile din .bss, iar unde a fost cazul sa aloc memorie dinamic, am si eliberat-o pentru a reduce memory leaks-urile. 
+
+
+
+
+
+
